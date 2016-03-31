@@ -247,6 +247,8 @@ class VCDWriter(object):
             if value not in list('01xzXZ'):
                 raise ValueError('Invalid scalar value ({})'.format(value))
             val_str = value
+        elif value is None:
+            val_str = 'z'
         else:
             val_str = ('1' if value else '0')
         self._change_value(ident, timestamp, val_str + ident + '\n')
@@ -257,6 +259,8 @@ class VCDWriter(object):
                 (isinstance(value, six.string_types) and
                  value in list('xzXZ'))):
             val_line = 'r{} {}\n'.format(value, ident)
+        elif value is None:
+            val_line = 'rz {}\n'.format(ident)
         else:
             raise ValueError('Invalid real value ({})'.format(value))
         self._change_value(ident, timestamp, val_line)
@@ -284,6 +288,8 @@ class VCDWriter(object):
         """
         if isinstance(value, six.integer_types):
             val_line = 'b{} {}\n'.format(bin_str(value, size), ident)
+        elif value is None:
+            val_line = 'bz {}\n'.format(ident)
         elif isinstance(value, six.string_types) and value in list('xzXZ'):
             val_line = 'b{} {}\n'.format(value, ident)
         else:
@@ -336,12 +342,15 @@ class VCDWriter(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def close(self):
+    def close(self, timestamp=None):
         """Close VCD writer.
 
         Any buffered VCD data is flushed to the output file. After
         :meth:`close()`, no variable registration or value changes will be
         accepted.
+
+        :param int timestamp: optional final timestamp to insert into VCD
+                              stream.
 
         .. Note::
 
@@ -351,7 +360,7 @@ class VCDWriter(object):
 
         """
         if not self._closed:
-            self.flush()
+            self.flush(timestamp)
             self._closed = True
 
     def flush(self, timestamp=None):

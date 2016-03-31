@@ -4,7 +4,7 @@ from __future__ import print_function
 import sys
 import pytest
 
-from vcd.writer import VCDWriter, bin_str
+from vcd.writer import VCDWriter, VCDPhaseError, bin_str
 
 
 def split_lines(capsys):
@@ -51,7 +51,7 @@ def test_vcd_close(capsys):
     lines = split_lines(capsys)
     assert lines == ['$timescale 1 us $end',
                      '$enddefinitions $end']
-    with pytest.raises(RuntimeError):
+    with pytest.raises(VCDPhaseError):
         vcd.register_int('a', 'b')
     vcd.close()  # Idempotency test
     assert not split_lines(capsys)
@@ -62,9 +62,9 @@ def test_vcd_change_after_close(capsys):
     change = vcd.register_int('a', 'b')
     assert not split_lines(capsys)
     vcd.close()
-    with pytest.raises(RuntimeError):
+    with pytest.raises(VCDPhaseError):
         change(1, 1)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(VCDPhaseError):
         vcd.flush()
 
 
@@ -174,7 +174,7 @@ def test_vcd_late_registration(capsys):
 
         change_nn0(1, 210)
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(VCDPhaseError):
             vcd.register_var('aaa.bbb', 'nn2', 'integer', 8)
 
 
@@ -264,7 +264,7 @@ def test_vcd_scalar_var(capsys):
     assert lines[-7] == 'xv0'
     assert lines[-5] == '0v0'
     assert lines[-3] == '1v0'
-    assert lines[-1] == '0v0'
+    assert lines[-1] == 'zv0'
 
 
 def test_vcd_real_var(capsys):
@@ -302,21 +302,22 @@ def test_vcd_integer_var(capsys):
         change_nn1(1, -4)
         change_nn0(2, 'z')
         change_nn1(2, 'X')
+        change_nn1(3, None)
         with pytest.raises(ValueError):
-            change_nn1(3, -129)
+            change_nn1(4, -129)
         with pytest.raises(ValueError):
-            change_nn1(3, 'zee')
+            change_nn1(4, 'zee')
         with pytest.raises(ValueError):
-            change_nn1(3, 1.234)
-        with pytest.raises(ValueError):
-            change_nn1(3, None)  # TODO: perhaps support this as 'z' equiv?
+            change_nn1(4, 1.234)
     lines = split_lines(capsys)
-    assert lines[-6:] == ['#1',
+    assert lines[-8:] == ['#1',
                           'b100 v0',
                           'b11111100 v1',
                           '#2',
                           'bz v0',
-                          'bX v1']
+                          'bX v1',
+                          '#3',
+                          'bz v1']
 
 
 def test_vcd_dump_on_no_op(capsys):
