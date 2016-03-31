@@ -13,6 +13,15 @@ import six
 from six.moves import zip_longest
 
 
+class VCDPhaseError(Exception):
+    """Indicating a :class:`VCDWriter` method was called in the wrong phase.
+
+    For example, calling :meth:`register_var()` after :meth:`close()` will
+    raise this exception.
+
+    """
+
+
 class VCDWriter(object):
     """Value Change Dump writer.
 
@@ -107,7 +116,7 @@ class VCDWriter(object):
         :param int size: Size, in bits, of the variable.
         :param init: Optional initial value; defaults to 'x'.
         :param str ident: Optional identifier for use in the VCD stream.
-        :raises RuntimeError: if any values have been changed
+        :raises VCDPhaseError: if any values have been changed
         :raises ValueError: for invalid var_type value
         :raises TypeError: for invalid parameter types
         :raises KeyError: for duplicate var name
@@ -116,9 +125,9 @@ class VCDWriter(object):
 
         """
         if self._closed:
-            raise RuntimeError('Cannot register after close().')
+            raise VCDPhaseError('Cannot register after close().')
         elif not self._registering:
-            raise RuntimeError('Cannot register after the first value change.')
+            raise VCDPhaseError('Cannot register after time 0.')
         elif var_type not in self.VAR_TYPES:
             raise ValueError('Invalid var_type "{}"'.format(var_type))
 
@@ -285,7 +294,7 @@ class VCDWriter(object):
         if timestamp < self._prev_timestamp:
             raise ValueError('Out of order value change ({})'.format(ident))
         elif self._closed:
-            raise RuntimeError('Cannot change value after close()')
+            raise VCDPhaseError('Cannot change value after close()')
         if timestamp and self._registering:
             self._finalize_registration()
         if timestamp and self._dumping:
@@ -356,7 +365,7 @@ class VCDWriter(object):
 
         """
         if self._closed:
-            raise RuntimeError('Cannot flush() after close()')
+            raise VCDPhaseError('Cannot flush() after close()')
         if self._registering:
             self._finalize_registration()
         if timestamp is not None and timestamp > self._prev_timestamp:
