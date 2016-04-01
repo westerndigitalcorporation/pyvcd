@@ -4,5 +4,11 @@
 
 .. automodule:: vcd.writer
 
+.. autoclass:: VCDPhaseError
+    :members:
+
 .. autoclass:: VCDWriter
+    :members:
+
+.. autoclass:: Variable
     :members:

@@ -4,10 +4,9 @@ This module provides :class:`VCDWriter` for writing VCD files.
 
 """
 from __future__ import print_function, division
-from collections import OrderedDict, Sequence
+from collections import OrderedDict, Sequence, namedtuple
 from numbers import Number
 import datetime
-import functools
 
 import six
 from six.moves import zip_longest
@@ -120,8 +119,8 @@ class VCDWriter(object):
         :raises ValueError: for invalid var_type value
         :raises TypeError: for invalid parameter types
         :raises KeyError: for duplicate var name
-        :returns: Function to change the variable's value with the signature
-                  ``change_value(timestamp, value)``
+        :returns: :class:`Variable` instance appropriate for use with
+                  :meth:`change()`.
 
         """
         if self._closed:
@@ -133,8 +132,8 @@ class VCDWriter(object):
 
         scope_tuple = self._get_scope_tuple(scope)
 
-        var_names = self._scope_var_names.setdefault(scope_tuple, [])
-        if name in var_names:
+        scope_names = self._scope_var_names.setdefault(scope_tuple, [])
+        if name in scope_names:
             raise KeyError('Duplicate var {} in scope {}'.format(name, scope))
 
         if ident is None:
@@ -143,26 +142,22 @@ class VCDWriter(object):
         var_str = '$var {var_type} {size} {ident} {name} $end'.format(
             var_type=var_type, size=size, ident=ident, name=name)
 
-        if size == 1:
-            change_func = functools.partial(self.change_scalar, ident)
-        elif var_type == 'real':
-            change_func = functools.partial(self.change_real, ident)
-        else:
-            change_func = functools.partial(self.change_integer, ident, size)
-
         if init is None:
             if var_type == 'real':
                 init = 0.0
             else:
                 init = 'x'
-        change_func(0, init)
+
+        var = Variable(ident, var_type, size)
+
+        self.change(var, 0, init)
 
         # Only alter state after change_func() succeeds
         self._next_var_id += 1
         self._scope_var_strs.setdefault(scope_tuple, []).append(var_str)
-        var_names.append(name)
+        scope_names.append(name)
 
-        return change_func
+        return var
 
     def register_int(self, scope, name, size=64, init='x', ident=None):
         """Register an integer variable.
@@ -205,7 +200,7 @@ class VCDWriter(object):
         return self.register_var(scope, name, 'event', size, init, ident)
 
     def register_wire(self, scope, name, size=1, init='x', ident=None):
-        """Register wirte variable.
+        """Register wire variable.
 
         This is a convenience method wrapping :meth:`register_var()`.
 
@@ -242,77 +237,52 @@ class VCDWriter(object):
     def _dump_values(self, keyword):
         print(keyword, file=self._ofile)
         print(*six.itervalues(self._ident_values),
-              sep='', end='', file=self._ofile)
+              sep='\n', file=self._ofile)
         print('$end', file=self._ofile)
 
-    def change_scalar(self, ident, timestamp, value):
-        """Change value of 1-bit scalar variable in VCD."""
-        if isinstance(value, six.string_types):
-            if value not in list('01xzXZ'):
-                raise ValueError('Invalid scalar value ({})'.format(value))
-            val_str = value
-        elif value is None:
-            val_str = 'z'
-        else:
-            val_str = ('1' if value else '0')
-        self._change_value(ident, timestamp, val_str + ident + '\n')
+    def change(self, var, timestamp, value):
+        """Change variable's value in VCD stream.
 
-    def change_real(self, ident, timestamp, value):
-        """Change value of real variable in VCD."""
-        if isinstance(value, Number):
-            val_line = 'r{:g} {}\n'.format(value, ident)
-        else:
-            raise ValueError('Invalid real value ({})'.format(value))
-        self._change_value(ident, timestamp, val_line)
+        This is the fundamental behavior of a :class:`VCDWriter` instance. Each
+        time a variable's value changes, this method should be called.
 
-    def change_integer(self, ident, size, timestamp, value):
-        """Change value of identified integer variable in VCD.
-
-        This method is meant to be called indirectly via the partially applied
-        ``change_value(timestamp, value)`` function returned by
-        :meth:`register_var()`.
-
-        :param str ident: Identifier used in change section of VCD.
-        :param int size: Configured size, in bits, of the integer variable.
-        :param int timestamp: Simulation time of the value change.
-        :param value: The new value for the integer variable.
-        :type value: int or str, a str must be one of 'z', 'Z', 'x', or 'X'.
-        :raises ValueError: if `value` is invalid
+        The *timestamp* must be in-order relative to timestamps from previous
+        calls to :meth:`change()`. It is okay to call :meth:`change()` multiple
+        times with the same *timestamp*, but never with a past *timestamp*.
 
         .. Note::
 
-            The `value` must be representable by the configured `size` number
-            of bits. Negative values will be converted to their appropriate
-            two's-complement form.
+            :meth:`change()` may be called multiple times before the timestamp
+            progresses past 0. The last value change for each variable will go
+            into the $dumpvars section.
+
+        :param Variable var: :class:`Variable` instance (i.e. from
+                             :meth:`register_var()`).
+        :param int timestamp: Current simulation time.
+        :param value: New value for *var*.
+        :raises ValueError: if the value is not valid for *var*.
+        :raises VCDPhaseError: if the timestamp is out of order or the
+                               :class:`VCDWriter` instance is closed.
 
         """
-        if isinstance(value, six.integer_types):
-            val_line = 'b{} {}\n'.format(bin_str(value, size), ident)
-        elif value is None:
-            val_line = 'bz {}\n'.format(ident)
-        elif isinstance(value, six.string_types) and value in list('xzXZ'):
-            val_line = 'b{} {}\n'.format(value, ident)
-        else:
-            raise ValueError('Invalid integer value ({})'.format(value))
-        self._change_value(ident, timestamp, val_line)
-
-    def _change_value(self, ident, timestamp, value_change):
         if timestamp < self._prev_timestamp:
-            raise ValueError('Out of order value change ({})'.format(ident))
+            raise VCDPhaseError('Out of order value change ({})'.format(var))
         elif self._closed:
             raise VCDPhaseError('Cannot change value after close()')
+
+        val_str = var.format_value(value)
+
         if timestamp and self._registering:
             self._finalize_registration()
+
         if timestamp and self._dumping:
-            # TODO: should the user be required to only submit integer
-            # timestamps? This conversion is potentially wasteful...
             ts_int = int(timestamp)
             if ts_int > self._prev_timestamp:
                 print('#', ts_int, sep='', file=self._ofile)
                 self._prev_timestamp = ts_int
-            print(value_change, end='', file=self._ofile)
+            print(val_str, file=self._ofile)
         else:
-            self._ident_values[ident] = value_change
+            self._ident_values[var.ident] = val_str
 
     def _get_scope_tuple(self, scope):
         if isinstance(scope, six.string_types):
@@ -432,6 +402,44 @@ class VCDWriter(object):
         self._header_keywords.clear()
         self._scope_types.clear()
         self._scope_var_names.clear()
+
+
+class Variable(namedtuple('Variable', 'ident type size')):
+    """VCD Variable details needed to call :meth:`VCDWriter.change()`.
+
+    :attr ident: The variable's identifier used in the VCD file.
+    :attr type: The variable type. One of :attr:`VCDWriter.VAR_TYPES`.
+    :attr size: The variable's size, in bits.
+
+    """
+    def format_value(self, value):
+        if self.size == 1:
+            if isinstance(value, six.string_types):
+                if len(value) != 1 or value not in '01xzXZ':
+                    raise ValueError('Invalid scalar value ({})'.format(value))
+                return value + self.ident
+            elif value is None:
+                return 'z' + self.ident
+            elif value:
+                return '1' + self.ident
+            else:
+                return '0' + self.ident
+        elif self.type.startswith('real'):
+            if isinstance(value, Number):
+                return 'r{:.16g} {}'.format(value, self.ident)
+            else:
+                raise ValueError('Invalid real value ({})'.format(value))
+        else:
+            if isinstance(value, six.integer_types):
+                return 'b{} {}'.format(bin_str(value, self.size), self.ident)
+            elif value is None:
+                return 'bz ' + self.ident
+            elif (isinstance(value, six.string_types) and
+                  len(value) == 1 and
+                  value in 'xzXZ'):
+                return 'b{} {}'.format(value, self.ident)
+            else:
+                raise ValueError('Invalid vector value ({})'.format(value))
 
 
 def bin_str(value, size):

@@ -59,11 +59,11 @@ def test_vcd_close(capsys):
 
 def test_vcd_change_after_close(capsys):
     vcd = VCDWriter(sys.stdout, date='')
-    change = vcd.register_int('a', 'b')
+    var = vcd.register_int('a', 'b')
     assert not split_lines(capsys)
     vcd.close()
     with pytest.raises(VCDPhaseError):
-        change(1, 1)
+        vcd.change(var, 1, 1)
     with pytest.raises(VCDPhaseError):
         vcd.flush()
 
@@ -90,9 +90,9 @@ def test_vcd_no_scopes(capsys):
 
 def test_vcd_one_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        change = vcd.register_var('sss', 'nnn', 'integer', 32, ident='foo')
-        change(0, 0)
-        change(1, 10)
+        var = vcd.register_var('sss', 'nnn', 'integer', 32, ident='foo')
+        vcd.change(var, 0, 0)
+        vcd.change(var, 1, 10)
     lines = split_lines(capsys)
     assert '$var integer 32 foo nnn $end' in lines
     assert lines[-1] == 'b1010 foo'
@@ -166,13 +166,13 @@ def test_vcd_scope_tuple(capsys):
 
 def test_vcd_late_registration(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        change_v0 = vcd.register_var('aaa.bbb', 'nn0', 'integer', 8)
-        change_v0(0, 123)
+        var0 = vcd.register_var('aaa.bbb', 'nn0', 'integer', 8)
+        vcd.change(var0, 0, 123)
 
         # Still at t0, registration okay...
         vcd.register_var('aaa.bbb', 'nn1', 'integer', 8)
 
-        change_v0(1, 210)
+        vcd.change(var0, 1, 210)
 
         with pytest.raises(VCDPhaseError):
             vcd.register_var('aaa.bbb', 'nn2', 'integer', 8)
@@ -199,10 +199,10 @@ def test_vcd_duplicate_var_name(capsys):
 
 def test_vcd_change_out_of_order(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
-        change = vcd.register_var('scope', 'a', 'wire', 1)
-        change(3, True)
-        with pytest.raises(ValueError):
-            change(1, False)
+        var = vcd.register_var('scope', 'a', 'wire', 1)
+        vcd.change(var, 3, True)
+        with pytest.raises(VCDPhaseError):
+            vcd.change(var, 1, False)
 
 
 def test_vcd_register_int(capsys):
@@ -247,16 +247,16 @@ def test_vcd_register_event(capsys):
 
 def test_vcd_scalar_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        change_v0 = vcd.register_var('aaa', 'nn0', 'integer', 1)
-        change_v0(1, True)
-        change_v0(2, False)
-        change_v0(3, 'z')
-        change_v0(4, 'x')
-        change_v0(5, 0)
-        change_v0(6, 1)
+        v0 = vcd.register_var('aaa', 'nn0', 'integer', 1)
+        vcd.change(v0, 1, True)
+        vcd.change(v0, 2, False)
+        vcd.change(v0, 3, 'z')
+        vcd.change(v0, 4, 'x')
+        vcd.change(v0, 5, 0)
+        vcd.change(v0, 6, 1)
         with pytest.raises(ValueError):
-            change_v0(7, 'bogus')
-        change_v0(7, None)
+            vcd.change(v0, 7, 'bogus')
+        vcd.change(v0, 7, None)
     lines = split_lines(capsys)
     assert lines[-13] == '1v0'
     assert lines[-11] == '0v0'
@@ -269,20 +269,20 @@ def test_vcd_scalar_var(capsys):
 
 def test_vcd_real_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        change_v0 = vcd.register_var('aaa', 'nn0', 'real', 32)
-        change_v1 = vcd.register_var('aaa', 'nn1', 'real', 64)
-        change_v0(1, 1234.5)
-        change_v1(1, 5432.1)
-        change_v0(2, 0)
-        change_v1(2, 1)
-        change_v0(3, 999.9)
-        change_v1(3, -999.9)
+        v0 = vcd.register_var('aaa', 'nn0', 'real', 32)
+        v1 = vcd.register_var('aaa', 'nn1', 'real', 64)
+        vcd.change(v0, 1, 1234.5)
+        vcd.change(v1, 1, 5432.1)
+        vcd.change(v0, 2, 0)
+        vcd.change(v1, 2, 1)
+        vcd.change(v0, 3, 999.9)
+        vcd.change(v1, 3, -999.9)
         with pytest.raises(ValueError):
-            change_v0(4, 'z')
+            vcd.change(v0, 4, 'z')
         with pytest.raises(ValueError):
-            change_v0(4, 'x')
+            vcd.change(v0, 4, 'x')
         with pytest.raises(ValueError):
-            change_v0(4, 'InVaLiD')
+            vcd.change(v0, 4, 'InVaLiD')
     lines = split_lines(capsys)
     expected_last = ['#1',
                      'r1234.5 v0',
@@ -299,19 +299,19 @@ def test_vcd_real_var(capsys):
 
 def test_vcd_integer_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        change_v0 = vcd.register_var('aaa', 'nn0', 'integer', 16)
-        change_v1 = vcd.register_var('aaa', 'nn1', 'integer', 8)
-        change_v0(1, 4)
-        change_v1(1, -4)
-        change_v0(2, 'z')
-        change_v1(2, 'X')
-        change_v1(3, None)
+        v0 = vcd.register_var('aaa', 'nn0', 'integer', 16)
+        v1 = vcd.register_var('aaa', 'nn1', 'integer', 8)
+        vcd.change(v0, 1, 4)
+        vcd.change(v1, 1, -4)
+        vcd.change(v0, 2, 'z')
+        vcd.change(v1, 2, 'X')
+        vcd.change(v1, 3, None)
         with pytest.raises(ValueError):
-            change_v1(4, -129)
+            vcd.change(v1, 4, -129)
         with pytest.raises(ValueError):
-            change_v1(4, 'zee')
+            vcd.change(v1, 4, 'zee')
         with pytest.raises(ValueError):
-            change_v1(4, 1.234)
+            vcd.change(v1, 4, 1.234)
     lines = split_lines(capsys)
     assert lines[-8:] == ['#1',
                           'b100 v0',
@@ -325,9 +325,9 @@ def test_vcd_integer_var(capsys):
 
 def test_vcd_dump_on_no_op(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        change0 = vcd.register_var('scope', 'a', 'integer', 8)
+        v0 = vcd.register_var('scope', 'a', 'integer', 8)
         vcd.dump_on(0)  # Should be a no-op
-        change0(1, 1)
+        vcd.change(v0, 1, 1)
         vcd.dump_on(2)  # Also a no-op
 
     expected_lines = [
@@ -349,11 +349,11 @@ def test_vcd_dump_on_no_op(capsys):
 
 def test_vcd_dump_off_early(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        change = vcd.register_var('scope', 'a', 'integer', 8, init=7)
+        v0 = vcd.register_var('scope', 'a', 'integer', 8, init=7)
         vcd.dump_off(0)
-        change(5, 1)
+        vcd.change(v0, 5, 1)
         vcd.dump_on(10)
-        change(15, 2)
+        vcd.change(v0, 15, 2)
 
     expected_lines = [
         '$date today $end',
@@ -382,12 +382,14 @@ def test_vcd_dump_off_early(capsys):
 
 def test_vcd_dump_off_real(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
-        change = vcd.register_real('scope', 'a')
-        change(1, 1.0)
+        v0 = vcd.register_real('scope', 'a')
+        vcd.change(v0, 1, 1.0)
         vcd.dump_off(2)
-        change(3, 3.0)
+        vcd.change(v0, 3, 3.0)
         vcd.dump_on(4)
-        change(5, 5.0)
+        vcd.change(v0, 5, 5.0)
+
+    assert v0.ident == 'v0'
 
     expected_lines = [
         '$timescale 1 us $end',
@@ -416,24 +418,24 @@ def test_vcd_dump_off_real(capsys):
 
 def test_vcd_dump_off_on(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        change0 = vcd.register_var('scope', 'a', 'integer', 8)
-        change1 = vcd.register_var('scope', 'b', 'wire', 1)
+        v0 = vcd.register_var('scope', 'a', 'integer', 8)
+        v1 = vcd.register_var('scope', 'b', 'wire', 1)
 
-        change0(1, 10)
-        change1(2, True)
+        vcd.change(v0, 1, 10)
+        vcd.change(v1, 2, True)
 
         vcd.dump_off(4)
         vcd.dump_off(5)  # Idempotent
 
-        change0(6, 11)
-        change1(7, False)
+        vcd.change(v0, 6, 11)
+        vcd.change(v1, 7, False)
 
         vcd.dump_on(9)
         vcd.dump_off(10)
         vcd.dump_on(10)
 
-        change0(11, 12)
-        change1(11, True)
+        vcd.change(v0, 11, 12)
+        vcd.change(v1, 11, True)
 
 
 def test_bin_str_3bit():
