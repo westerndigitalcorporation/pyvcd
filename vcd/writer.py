@@ -43,9 +43,9 @@ class VCDWriter(object):
     SCOPE_TYPES = ['begin', 'fork', 'function', 'module', 'task']
 
     #: Valid VCD variable types.
-    VAR_TYPES = ['event', 'integer', 'parameter', 'real', 'reg', 'supply0',
-                 'supply1', 'time', 'tri', 'triand', 'trior', 'trireg', 'tri0',
-                 'tri1', 'wand', 'wire', 'wor']
+    VAR_TYPES = ['event', 'integer', 'parameter', 'real', 'realtime', 'reg',
+                 'supply0', 'supply1', 'time', 'tri', 'triand', 'trior',
+                 'trireg', 'tri0', 'tri1', 'wand', 'wire', 'wor']
 
     #: Valid timescale numbers.
     TIMESCALE_NUMS = [1, 10, 100]
@@ -95,7 +95,7 @@ class VCDWriter(object):
         scope_tuple = self._get_scope_tuple(scope)
         self._scope_types[scope_tuple] = scope_type
 
-    def register_var(self, scope, name, var_type, size, init='x', ident=None):
+    def register_var(self, scope, name, var_type, size, init=None, ident=None):
         """Register a VCD variable and return function to change value.
 
         All VCD variables must be registered prior to any value changes.
@@ -150,6 +150,11 @@ class VCDWriter(object):
         else:
             change_func = functools.partial(self.change_integer, ident, size)
 
+        if init is None:
+            if var_type == 'real':
+                init = 0.0
+            else:
+                init = 'x'
         change_func(0, init)
 
         # Only alter state after change_func() succeeds
@@ -222,8 +227,7 @@ class VCDWriter(object):
             if val_str[0] == 'b':
                 print('bx', ident, file=self._ofile)
             elif val_str[0] == 'r':
-                # TODO: GTKWave interprets 'rx' in an unexpected manner.
-                print('rx', ident, file=self._ofile)
+                pass  # real variables cannot have 'z' or 'x' state
             else:
                 print('x', ident, sep='', file=self._ofile)
         print('$end', file=self._ofile)
@@ -255,12 +259,8 @@ class VCDWriter(object):
 
     def change_real(self, ident, timestamp, value):
         """Change value of real variable in VCD."""
-        if (isinstance(value, Number) or
-                (isinstance(value, six.string_types) and
-                 value in list('xzXZ'))):
-            val_line = 'r{} {}\n'.format(value, ident)
-        elif value is None:
-            val_line = 'rz {}\n'.format(ident)
+        if isinstance(value, Number):
+            val_line = 'r{:g} {}\n'.format(value, ident)
         else:
             raise ValueError('Invalid real value ({})'.format(value))
         self._change_value(ident, timestamp, val_line)
