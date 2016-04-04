@@ -1,0 +1,38 @@
+PyVCD
+=====
+
+The PyVCD package writes Value Change Dump (VCD) files as specified in
+IEEE 1364-2005.
+
+Quick Start
+-----------
+
+.. code-block:: python
+
+    >>> import sys
+    >>> from vcd import VCDWriter
+    >>> with VCDWriter(sys.stdout, timescale='1 ns', date='today') as writer:
+    ...     counter_var = writer.register_int('a.b.c', 'counter', size=8)
+    ...     for timestamp, value in enumerate(range(10, 20, 2)):
+    ...         writer.change(counter_var, timestamp, value)
+    $date today $end
+    $timescale 1 ns $end
+    $scope module a $end
+    $scope module b $end
+    $scope module c $end
+    $var integer 8 v0 counter $end
+    $upscope $end
+    $upscope $end
+    $upscope $end
+    $enddefinitions $end
+    $dumpvars
+    b1010 v0
+    $end
+    #1
+    b1100 v0
+    #2
+    b1110 v0
+    #3
+    b10000 v0
+    #4
+    b10010 v0
