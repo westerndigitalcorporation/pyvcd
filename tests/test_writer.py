@@ -4,7 +4,7 @@ from __future__ import print_function
 import sys
 import pytest
 
-from vcd.writer import VCDWriter, VCDPhaseError, bin_str
+from vcd.writer import VCDWriter, VCDPhaseError, Variable, VectorVariable
 
 
 def split_lines(capsys):
@@ -221,22 +221,6 @@ def test_vcd_register_real(capsys):
     assert 'r0' in out
 
 
-def test_vcd_register_wire(capsys):
-    with VCDWriter(sys.stdout, date='') as vcd:
-        vcd.register_wire('scope', 'a')
-    out = capsys.readouterr()[0]
-    assert '$var wire 1 v0 a $end' in out
-    assert 'xv0' in out
-
-
-def test_vcd_register_reg(capsys):
-    with VCDWriter(sys.stdout, date='') as vcd:
-        vcd.register_reg('scope', 'a', 32)
-    out = capsys.readouterr()[0]
-    assert '$var reg 32 v0 a $end' in out
-    assert 'bx v0' in out
-
-
 def test_vcd_register_event(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_event('scope', 'a')
@@ -306,21 +290,26 @@ def test_vcd_integer_var(capsys):
         vcd.change(v0, 2, 'z')
         vcd.change(v1, 2, 'X')
         vcd.change(v1, 3, None)
+        vcd.change(v0, 3, '1010')
         with pytest.raises(ValueError):
             vcd.change(v1, 4, -129)
         with pytest.raises(ValueError):
-            vcd.change(v1, 4, 'zee')
+            vcd.change(v1, 4, '111100001')  # Too long
         with pytest.raises(ValueError):
             vcd.change(v1, 4, 1.234)
+
+    expected_last = ['#1',
+                     'b100 v0',
+                     'b11111100 v1',
+                     '#2',
+                     'bz v0',
+                     'bX v1',
+                     '#3',
+                     'bz v1',
+                     'b1010 v0']
+
     lines = split_lines(capsys)
-    assert lines[-8:] == ['#1',
-                          'b100 v0',
-                          'b11111100 v1',
-                          '#2',
-                          'bz v0',
-                          'bX v1',
-                          '#3',
-                          'bz v1']
+    assert lines[-len(expected_last):] == expected_last
 
 
 def test_vcd_dump_on_no_op(capsys):
@@ -438,23 +427,30 @@ def test_vcd_dump_off_on(capsys):
         vcd.change(v1, 11, True)
 
 
-def test_bin_str_3bit():
+def test_variable():
+    var = Variable('ident0', 'integer', 16)
+    with pytest.raises(NotImplementedError):
+        var.format_value(0)
+
+
+def test_vector_var_3bit():
     bin_u_s = [
-        ('0', 0, 0),
-        ('1', 1, 1),
-        ('10', 2, 2),
-        ('11', 3, 3),
-        ('100', 4, -4),
-        ('101', 5, -3),
-        ('110', 6, -2),
-        ('111', 7, -1),
+        ('b0 v', 0, 0),
+        ('b1 v', 1, 1),
+        ('b10 v', 2, 2),
+        ('b11 v', 3, 3),
+        ('b100 v', 4, -4),
+        ('b101 v', 5, -3),
+        ('b110 v', 6, -2),
+        ('b111 v', 7, -1),
     ]
+    var = VectorVariable('v', 'integer', 3)
     for expected, unsigned, signed in bin_u_s:
-        assert expected == bin_str(unsigned, 3)
-        assert expected == bin_str(signed, 3)
+        assert expected == var.format_value(unsigned)
+        assert expected == var.format_value(signed)
 
     with pytest.raises(ValueError):
-        bin_str(8, 3)
+        var.format_value(8)
 
     with pytest.raises(ValueError):
-        bin_str(-5, 3)
+        var.format_value(-5)

@@ -12,3 +12,12 @@
 
 .. autoclass:: Variable
     :members:
+
+.. autoclass:: ScalarVariable
+    :members:
+
+.. autoclass:: RealVariable
+    :members:
+
+.. autoclass:: VectorVariable
+    :members:

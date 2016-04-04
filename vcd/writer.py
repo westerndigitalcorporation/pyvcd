@@ -3,7 +3,7 @@
 This module provides :class:`VCDWriter` for writing VCD files.
 
 """
-from __future__ import print_function, division
+from __future__ import print_function
 from collections import OrderedDict, Sequence
 from numbers import Number
 import datetime
@@ -165,11 +165,11 @@ class VCDWriter(object):
         return var
 
     def register_int(self, scope, name, size=64, init='x', ident=None):
-        """Register an integer variable.
+        """Register an *integer* variable.
 
-        This is a convenience method wrapping :meth:`register_var()`.
+        This is a convenience wrapper for :meth:`register_var()`.
 
-        :returns: `change_value(timestamp, value)` function
+        :rtype: :class:`VectorVariable`
 
         """
         return self.register_var(scope, name, 'integer', size, init, ident)
@@ -177,42 +177,22 @@ class VCDWriter(object):
     def register_real(self, scope, name, size=64, init=0.0, ident=None):
         """Register real variable.
 
-        This is a convenience method wrapping :meth:`register_var()`.
+        This is a convenience wrapper for :meth:`register_var()`.
 
-        :returns: `change_value(timestamp, value)` function
+        :rtype: :class:`RealVariable`
 
         """
         return self.register_var(scope, name, 'real', size, init, ident=None)
 
-    def register_reg(self, scope, name, size, init='x', ident=None):
-        """Register reg variable.
-
-        This is a convenience method wrapping :meth:`register_var()`.
-
-        :returns: `change_value(timestamp, value)` function
-
-        """
-        return self.register_var(scope, name, 'reg', size, init, ident)
-
     def register_event(self, scope, name, size=1, init='z', ident=None):
         """Register event variable.
 
-        This is a convenience method wrapping :meth:`register_var()`.
+        This is a convenience wrapper for :meth:`register_var()`.
 
-        :returns: `change_value(timestamp, value)` function
+        :rtype: :class:`ScalarVariable`
 
         """
         return self.register_var(scope, name, 'event', size, init, ident)
-
-    def register_wire(self, scope, name, size=1, init='x', ident=None):
-        """Register wire variable.
-
-        This is a convenience method wrapping :meth:`register_var()`.
-
-        :returns: `change_value(timestamp, value)` function
-
-        """
-        return self.register_var(scope, name, 'wire', size, init, ident)
 
     def dump_off(self, timestamp):
         """Suspend dumping to VCD file."""
@@ -383,6 +363,8 @@ class VCDWriter(object):
                             scope[:i+j+1], self._default_scope_type)
                         yield '$scope {} {} $end'.format(scope_type, name)
                     break
+            else:
+                assert scope != prev_scope  # pragma no cover
 
             for var_str in var_strs:
                 yield var_str
@@ -410,23 +392,41 @@ class VCDWriter(object):
 
 
 class Variable(object):
+    """VCD variable details needed to call :meth:`VCDWriter.change()`."""
 
     __slots__ = ('ident', 'type', 'size')
 
     def __init__(self, ident, type, size):
+        #: Identifier used in VCD output stream.
         self.ident = ident
+        #: VCD variable type; one of :const:`VCDWriter.VAR_TYPES`.
         self.type = type
+        #: Size, in bits, of variable.
         self.size = size
 
     def format_value(self, value):
+        """Format value change for use in VCD stream."""
         raise NotImplementedError
 
 
 class ScalarVariable(Variable):
+    """One-bit VCD scalar.
+
+    This is a 4-state variable and thus may have values of 0, 1, 'z', or 'x'.
+
+    """
 
     __slots__ = ()
 
     def format_value(self, value):
+        """Format scalar value change for VCD stream.
+
+        :param value: 1-bit (4-state) scalar value.
+        :type value: str, bool, int, or None
+        :raises ValueError: for invalid *value*.
+        :returns: string representing value change for use in a VCD stream.
+
+        """
         if isinstance(value, six.string_types):
             if len(value) != 1 or value not in '01xzXZ':
                 raise ValueError('Invalid scalar value ({})'.format(value))
@@ -440,10 +440,23 @@ class ScalarVariable(Variable):
 
 
 class RealVariable(Variable):
+    """Real (IEEE-754 double-precision floating point) variable.
+
+    Values must be numeric and cannot be 'x' or 'z' states.
+
+    """
 
     __slots__ = ()
 
     def format_value(self, value):
+        """Format real value change for VCD stream.
+
+        :param value: Numeric changed value.
+        :param type: float or int
+        :raises ValueError: for invalid real *value*.
+        :returns: string representing value change for use in a VCD stream.
+
+        """
         if isinstance(value, Number):
             return 'r{:.16g} {}'.format(value, self.ident)
         else:
@@ -451,40 +464,45 @@ class RealVariable(Variable):
 
 
 class VectorVariable(Variable):
+    """Bit vector variable type.
+
+    This is for the various non-scalar and non-real variable types including
+    integer, register, wire, etc.
+
+    """
 
     __slots__ = ()
 
     def format_value(self, value):
+        """Format value change for VCD stream.
+
+        :param value: New value for the variable.
+        :types value: int, str, or None
+        :raises ValueError: for *some* invalid values.
+
+        A *value* of `None` is the same as `'z'`.
+
+        .. Warning::
+
+            If *value* is of type :py:class:`str`, all characters must be one
+            of `'01xzXZ'`. For the sake of performance, checking **is not**
+            done to ensure value strings only contain conforming characters.
+            Thus it is possible to produce invalid VCD streams with invalid
+            string values.
+
+        """
         if isinstance(value, six.integer_types):
-            return 'b{} {}'.format(bin_str(value, self.size), self.ident)
+            max_val = 1 << self.size
+            if -value > (max_val >> 1) or value >= max_val:
+                raise ValueError('Value ({}) not representable in {} bits'
+                                 .format(value, self.size))
+            if value < 0:
+                value += max_val
+            return 'b{:b} {}'.format(value, self.ident)
         elif value is None:
             return 'bz ' + self.ident
-        elif (isinstance(value, six.string_types) and
-              len(value) == 1 and
-              value in 'xzXZ'):
+        elif isinstance(value, six.string_types) and len(value) <= self.size:
+            # It is up to the user to ensure valid characters '01xz'...
             return 'b{} {}'.format(value, self.ident)
         else:
             raise ValueError('Invalid vector value ({})'.format(value))
-
-
-def bin_str(value, size):
-    """Convert sized integer value into two's-compliment binary str.
-
-    :param int value: value to convert to binary string
-    :param int size: size, in bits, of value
-    :returns: str with binary ('0', '1') representation of `value`
-    :raises ValueError: if `value` is not representable with `size` bits
-
-    .. Note::
-
-    Leading zero characters are not returned in str
-
-    """
-    max_val = 1 << size
-    if -value > (max_val >> 1) or value >= max_val:
-        raise ValueError('Integer value ({}) not representable in {} bits'
-                         .format(value, size))
-    if value < 0:
-        return format(max_val + value, 'b')
-    else:
-        return format(value, 'b')
