@@ -4,7 +4,7 @@ This module provides :class:`VCDWriter` for writing VCD files.
 
 """
 from __future__ import print_function, division
-from collections import OrderedDict, Sequence, namedtuple
+from collections import OrderedDict, Sequence
 from numbers import Number
 import datetime
 
@@ -148,7 +148,12 @@ class VCDWriter(object):
             else:
                 init = 'x'
 
-        var = Variable(ident, var_type, size)
+        if size == 1:
+            var = ScalarVariable(ident, var_type, size)
+        elif var_type == 'real':
+            var = RealVariable(ident, var_type, size)
+        else:
+            var = VectorVariable(ident, var_type, size)
 
         self.change(var, 0, init)
 
@@ -404,42 +409,62 @@ class VCDWriter(object):
         self._scope_var_names.clear()
 
 
-class Variable(namedtuple('Variable', 'ident type size')):
-    """VCD Variable details needed to call :meth:`VCDWriter.change()`.
+class Variable(object):
 
-    :attr ident: The variable's identifier used in the VCD file.
-    :attr type: The variable type. One of :attr:`VCDWriter.VAR_TYPES`.
-    :attr size: The variable's size, in bits.
+    __slots__ = ('ident', 'type', 'size')
 
-    """
+    def __init__(self, ident, type, size):
+        self.ident = ident
+        self.type = type
+        self.size = size
+
     def format_value(self, value):
-        if self.size == 1:
-            if isinstance(value, six.string_types):
-                if len(value) != 1 or value not in '01xzXZ':
-                    raise ValueError('Invalid scalar value ({})'.format(value))
-                return value + self.ident
-            elif value is None:
-                return 'z' + self.ident
-            elif value:
-                return '1' + self.ident
-            else:
-                return '0' + self.ident
-        elif self.type.startswith('real'):
-            if isinstance(value, Number):
-                return 'r{:.16g} {}'.format(value, self.ident)
-            else:
-                raise ValueError('Invalid real value ({})'.format(value))
+        raise NotImplementedError
+
+
+class ScalarVariable(Variable):
+
+    __slots__ = ()
+
+    def format_value(self, value):
+        if isinstance(value, six.string_types):
+            if len(value) != 1 or value not in '01xzXZ':
+                raise ValueError('Invalid scalar value ({})'.format(value))
+            return value + self.ident
+        elif value is None:
+            return 'z' + self.ident
+        elif value:
+            return '1' + self.ident
         else:
-            if isinstance(value, six.integer_types):
-                return 'b{} {}'.format(bin_str(value, self.size), self.ident)
-            elif value is None:
-                return 'bz ' + self.ident
-            elif (isinstance(value, six.string_types) and
-                  len(value) == 1 and
-                  value in 'xzXZ'):
-                return 'b{} {}'.format(value, self.ident)
-            else:
-                raise ValueError('Invalid vector value ({})'.format(value))
+            return '0' + self.ident
+
+
+class RealVariable(Variable):
+
+    __slots__ = ()
+
+    def format_value(self, value):
+        if isinstance(value, Number):
+            return 'r{:.16g} {}'.format(value, self.ident)
+        else:
+            raise ValueError('Invalid real value ({})'.format(value))
+
+
+class VectorVariable(Variable):
+
+    __slots__ = ()
+
+    def format_value(self, value):
+        if isinstance(value, six.integer_types):
+            return 'b{} {}'.format(bin_str(value, self.size), self.ident)
+        elif value is None:
+            return 'bz ' + self.ident
+        elif (isinstance(value, six.string_types) and
+              len(value) == 1 and
+              value in 'xzXZ'):
+            return 'b{} {}'.format(value, self.ident)
+        else:
+            raise ValueError('Invalid vector value ({})'.format(value))
 
 
 def bin_str(value, size):
