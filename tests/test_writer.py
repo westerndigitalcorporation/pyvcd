@@ -135,12 +135,12 @@ def test_vcd_scopes(capsys):
                       '$upscope',
                       '$enddefinitions',
                       '$dumpvars',
-                      'bz v0',
-                      'bx v1',
-                      'bx v2',
-                      'bx v3',
-                      'bx v4',
-                      'bx v5',
+                      'bz 0',
+                      'bx 1',
+                      'bx 2',
+                      'bx 3',
+                      'bx 4',
+                      'bx 5',
                       '$end']
     for line, expected in zip(split_lines(capsys), expected_lines):
         print(line, '|', expected)
@@ -209,7 +209,7 @@ def test_vcd_register_int(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_int('scope', 'a')
     out = capsys.readouterr()[0]
-    assert '$var integer 64 v0 a $end' in out
+    assert '$var integer 64 0 a $end' in out
     assert 'bx' in out
 
 
@@ -217,7 +217,7 @@ def test_vcd_register_real(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_real('scope', 'a')
     out = capsys.readouterr()[0]
-    assert '$var real 64 v0 a $end' in out
+    assert '$var real 64 0 a $end' in out
     assert 'r0' in out
 
 
@@ -225,8 +225,8 @@ def test_vcd_register_event(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_event('scope', 'a')
     out = capsys.readouterr()[0]
-    assert '$var event 1 v0 a $end' in out
-    assert 'zv0' in out
+    assert '$var event 1 0 a $end' in out
+    assert 'z0' in out
 
 
 def test_vcd_scalar_var(capsys):
@@ -242,13 +242,13 @@ def test_vcd_scalar_var(capsys):
             vcd.change(v0, 7, 'bogus')
         vcd.change(v0, 7, None)
     lines = split_lines(capsys)
-    assert lines[-13] == '1v0'
-    assert lines[-11] == '0v0'
-    assert lines[-9] == 'zv0'
-    assert lines[-7] == 'xv0'
-    assert lines[-5] == '0v0'
-    assert lines[-3] == '1v0'
-    assert lines[-1] == 'zv0'
+    assert lines[-13] == '10'
+    assert lines[-11] == '00'
+    assert lines[-9] == 'z0'
+    assert lines[-7] == 'x0'
+    assert lines[-5] == '00'
+    assert lines[-3] == '10'
+    assert lines[-1] == 'z0'
 
 
 def test_vcd_real_var(capsys):
@@ -269,14 +269,14 @@ def test_vcd_real_var(capsys):
             vcd.change(v0, 4, 'InVaLiD')
     lines = split_lines(capsys)
     expected_last = ['#1',
-                     'r1234.5 v0',
-                     'r5432.1 v1',
+                     'r1234.5 0',
+                     'r5432.1 1',
                      '#2',
-                     'r0 v0',
-                     'r1 v1',
+                     'r0 0',
+                     'r1 1',
                      '#3',
-                     'r999.9 v0',
-                     'r-999.9 v1']
+                     'r999.9 0',
+                     'r-999.9 1']
 
     assert lines[-len(expected_last):] == expected_last
 
@@ -299,14 +299,14 @@ def test_vcd_integer_var(capsys):
             vcd.change(v1, 4, 1.234)
 
     expected_last = ['#1',
-                     'b100 v0',
-                     'b11111100 v1',
+                     'b100 0',
+                     'b11111100 1',
                      '#2',
-                     'bz v0',
-                     'bX v1',
+                     'bz 0',
+                     'bX 1',
                      '#3',
-                     'bz v1',
-                     'b1010 v0']
+                     'bz 1',
+                     'b1010 0']
 
     lines = split_lines(capsys)
     assert lines[-len(expected_last):] == expected_last
@@ -323,14 +323,14 @@ def test_vcd_dump_on_no_op(capsys):
         '$date today $end',
         '$timescale 1 us $end',
         '$scope module scope $end',
-        '$var integer 8 v0 a $end',
+        '$var integer 8 0 a $end',
         '$upscope $end',
         '$enddefinitions $end',
         '$dumpvars',
-        'bx v0',
+        'bx 0',
         '$end',
         '#1',
-        'b1 v0',
+        'b1 0',
     ]
 
     assert expected_lines == split_lines(capsys)
@@ -348,22 +348,22 @@ def test_vcd_dump_off_early(capsys):
         '$date today $end',
         '$timescale 1 us $end',
         '$scope module scope $end',
-        '$var integer 8 v0 a $end',
+        '$var integer 8 0 a $end',
         '$upscope $end',
         '$enddefinitions $end',
         '$dumpvars',
-        'b111 v0',
+        'b111 0',
         '$end',
         '#0',
         '$dumpoff',
-        'bx v0',
+        'bx 0',
         '$end',
         '#10',
         '$dumpon',
-        'b1 v0',
+        'b1 0',
         '$end',
         '#15',
-        'b10 v0',
+        'b10 0',
     ]
 
     assert expected_lines == split_lines(capsys)
@@ -378,28 +378,28 @@ def test_vcd_dump_off_real(capsys):
         vcd.dump_on(4)
         vcd.change(v0, 5, 5.0)
 
-    assert v0.ident == 'v0'
+    assert v0.ident == '0'
 
     expected_lines = [
         '$timescale 1 us $end',
         '$scope module scope $end',
-        '$var real 64 v0 a $end',
+        '$var real 64 0 a $end',
         '$upscope $end',
         '$enddefinitions $end',
         '$dumpvars',
-        'r0 v0',
+        'r0 0',
         '$end',
         '#1',
-        'r1 v0',
+        'r1 0',
         '#2',
         '$dumpoff',
         '$end',
         '#4',
         '$dumpon',
-        'r3 v0',
+        'r3 0',
         '$end',
         '#5',
-        'r5 v0',
+        'r5 0',
     ]
 
     assert expected_lines == split_lines(capsys)

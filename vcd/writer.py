@@ -137,7 +137,7 @@ class VCDWriter(object):
             raise KeyError('Duplicate var {} in scope {}'.format(name, scope))
 
         if ident is None:
-            ident = 'v' + str(self._next_var_id)
+            ident = format(self._next_var_id, 'x')
 
         var_str = '$var {var_type} {size} {ident} {name} $end'.format(
             var_type=var_type, size=size, ident=ident, name=name)
@@ -221,6 +221,7 @@ class VCDWriter(object):
 
     def _dump_values(self, keyword):
         print(keyword, file=self._ofile)
+        # TODO: events should be excluded
         print(*six.itervalues(self._ident_values),
               sep='\n', file=self._ofile)
         print('$end', file=self._ofile)

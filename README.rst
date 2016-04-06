@@ -20,19 +20,19 @@ Quick Start
     $scope module a $end
     $scope module b $end
     $scope module c $end
-    $var integer 8 v0 counter $end
+    $var integer 8 0 counter $end
     $upscope $end
     $upscope $end
     $upscope $end
     $enddefinitions $end
     $dumpvars
-    b1010 v0
+    b1010 0
     $end
     #1
-    b1100 v0
+    b1100 0
     #2
-    b1110 v0
+    b1110 0
     #3
-    b10000 v0
+    b10000 0
     #4
-    b10010 v0
+    b10010 0
