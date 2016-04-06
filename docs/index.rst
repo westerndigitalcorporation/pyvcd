@@ -8,6 +8,7 @@ Contents:
 
    vcd
    vcd.writer
+   vcd.gtkw
 
 
 Indices and tables
