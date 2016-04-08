@@ -16,3 +16,5 @@
 .. autodata:: flag_names
 
 .. autodata:: flag_masks
+
+.. autofunction:: spawn_gtkwave_interactive

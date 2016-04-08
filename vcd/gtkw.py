@@ -555,3 +555,78 @@ def encode_flags(names):
 
     """
     return reduce(operator.ior, (flag_masks[name] for name in names), 0)
+
+
+def spawn_gtkwave_interactive(dump_path, save_path,
+                              quiet=False):  # pragma: no cover
+    """Spawn gtkwave process in interactive mode.
+
+    A process pipeline is constructed such that the contents of the VCD dump
+    file at *dump_path* are displayed interactively as the dump file is being
+    written (i.e. with :class:`~vcd.writer.VCDWriter`.
+
+    The process pipeline built is approximately equivalent to::
+
+        $ tail -f dump_path | shmidcat | gtkwave -vI save_path
+
+    The ``tail``, ``shmidcat``, and ``gtkwave`` executables must be found in
+    ``$PATH``.
+
+    .. Warning::
+
+        This function does not work on Windows.
+
+    .. Note::
+
+        A child python process of the caller will remain running until the
+        GTKWave window is closed. This process ensures that the various other
+        child processes are properly reaped.
+
+    :param str dump_path: path to VCD dump file. The dump file must exist, but
+                          be empty.
+    :param str save_path: path to GTKWave save file. The save file will be read
+                          immediately by GTKWave and thus must be completely
+                          written.
+    :param bool quiet: quiet GTKWave's output by closing its `stdout` and
+                       `stderr` file descriptors.
+
+    """
+    import signal
+    import sys
+
+    if not os.fork():
+        shmidcat_rd_fd, tail_wr_fd = os.pipe()
+
+        tail_pid = os.fork()
+        if not tail_pid:
+            os.close(shmidcat_rd_fd)
+            os.dup2(tail_wr_fd, sys.stdout.fileno())
+            os.execlp('tail', 'tail', '-f', dump_path)
+
+        os.close(tail_wr_fd)
+        gtkwave_rd_fd, shmidcat_wr_fd = os.pipe()
+
+        shmidcat_pid = os.fork()
+        if not shmidcat_pid:
+            os.close(gtkwave_rd_fd)
+            os.dup2(shmidcat_rd_fd, sys.stdin.fileno())
+            os.dup2(shmidcat_wr_fd, sys.stdout.fileno())
+            os.execlp('shmidcat', 'shmidcat')
+
+        os.close(shmidcat_rd_fd)
+        os.close(shmidcat_wr_fd)
+
+        gtkwave_pid = os.fork()
+        if not gtkwave_pid:
+            os.dup2(gtkwave_rd_fd, sys.stdin.fileno())
+            if quiet:
+                os.close(sys.stdout.fileno())
+                os.close(sys.stderr.fileno())
+            os.execlp('gtkwave',
+                      'gtkwave', '--vcd', '--interactive', save_path)
+
+        # The first forked process exists to do this cleanup...
+        os.waitpid(gtkwave_pid, 0)
+        os.kill(tail_pid, signal.SIGTERM)
+        os.kill(shmidcat_pid, signal.SIGTERM)
+        os._exit(0)
