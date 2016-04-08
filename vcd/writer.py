@@ -53,7 +53,8 @@ class VCDWriter(object):
     TIMESCALE_UNITS = ['s', 'ms', 'us', 'ns', 'ps', 'fs']
 
     def __init__(self, file, timescale='1 us', date=None, comment='',
-                 version='', default_scope_type='module', scope_sep='.'):
+                 version='', default_scope_type='module', scope_sep='.',
+                 check_values=True):
         self._ofile = file
         self._check_timescale(timescale)
         self._header_keywords = {
@@ -67,6 +68,7 @@ class VCDWriter(object):
                 default_scope_type))
         self._default_scope_type = default_scope_type
         self._scope_sep = scope_sep
+        self._check_values = check_values
         self._registering = True
         self._closed = False
         self._dumping = True
@@ -256,7 +258,7 @@ class VCDWriter(object):
         elif self._closed:
             raise VCDPhaseError('Cannot change value after close()')
 
-        val_str = var.format_value(value)
+        val_str = var.format_value(value, self._check_values)
 
         if timestamp and self._registering:
             self._finalize_registration()
@@ -405,7 +407,7 @@ class Variable(object):
         #: Size, in bits, of variable.
         self.size = size
 
-    def format_value(self, value):
+    def format_value(self, value, check=True):
         """Format value change for use in VCD stream."""
         raise NotImplementedError
 
@@ -419,7 +421,7 @@ class ScalarVariable(Variable):
 
     __slots__ = ()
 
-    def format_value(self, value):
+    def format_value(self, value, check=True):
         """Format scalar value change for VCD stream.
 
         :param value: 1-bit (4-state) scalar value.
@@ -429,7 +431,7 @@ class ScalarVariable(Variable):
 
         """
         if isinstance(value, six.string_types):
-            if len(value) != 1 or value not in '01xzXZ':
+            if check and (len(value) != 1 or value not in '01xzXZ'):
                 raise ValueError('Invalid scalar value ({})'.format(value))
             return value + self.ident
         elif value is None:
@@ -449,7 +451,7 @@ class RealVariable(Variable):
 
     __slots__ = ()
 
-    def format_value(self, value):
+    def format_value(self, value, check=True):
         """Format real value change for VCD stream.
 
         :param value: Numeric changed value.
@@ -458,7 +460,7 @@ class RealVariable(Variable):
         :returns: string representing value change for use in a VCD stream.
 
         """
-        if isinstance(value, Number):
+        if not check or isinstance(value, Number):
             return 'r{:.16g} {}'.format(value, self.ident)
         else:
             raise ValueError('Invalid real value ({})'.format(value))
@@ -474,7 +476,7 @@ class VectorVariable(Variable):
 
     __slots__ = ()
 
-    def format_value(self, value):
+    def format_value(self, value, check=True):
         """Format value change for VCD stream.
 
         :param value: New value for the variable.
@@ -494,7 +496,7 @@ class VectorVariable(Variable):
         """
         if isinstance(value, six.integer_types):
             max_val = 1 << self.size
-            if -value > (max_val >> 1) or value >= max_val:
+            if check and (-value > (max_val >> 1) or value >= max_val):
                 raise ValueError('Value ({}) not representable in {} bits'
                                  .format(value, self.size))
             if value < 0:
@@ -502,8 +504,9 @@ class VectorVariable(Variable):
             return 'b{:b} {}'.format(value, self.ident)
         elif value is None:
             return 'bz ' + self.ident
-        elif isinstance(value, six.string_types) and len(value) <= self.size:
-            # It is up to the user to ensure valid characters '01xz'...
-            return 'b{} {}'.format(value, self.ident)
         else:
-            raise ValueError('Invalid vector value ({})'.format(value))
+            if check and (not isinstance(value, six.string_types) or
+                          len(value) > self.size or
+                          any(c not in '01xzXZ' for c in value)):
+                raise ValueError('Invalid vector value ({})'.format(value))
+            return 'b{} {}'.format(value, self.ident)
