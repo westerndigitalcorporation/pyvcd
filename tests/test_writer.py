@@ -13,15 +13,36 @@ def split_lines(capsys):
 
 def test_vcd_init(capsys):
     VCDWriter(sys.stdout, date='today')
-    VCDWriter(sys.stdout, timescale='1us')
-    with pytest.raises(ValueError):
-        VCDWriter(sys.stdout, timescale='2 us')
-    with pytest.raises(ValueError):
-        VCDWriter(sys.stdout, timescale='1 Gs')
-    with pytest.raises(TypeError):
-        VCDWriter(sys.stdout, timescale=100)
     with pytest.raises(ValueError):
         VCDWriter(sys.stdout, default_scope_type='InVaLiD')
+
+
+@pytest.mark.parametrize('timescale, expected', [
+    ('1 us', '1 us'),
+    ('us', '1 us'),
+    ((1, 'ns'), '1 ns'),
+    (('fs', ), '1 fs'),
+    ('100ps', '100 ps'),
+])
+def test_vcd_timescales(capsys, timescale, expected):
+    with VCDWriter(sys.stdout, date='', timescale=timescale):
+        pass
+    lines = split_lines(capsys)
+    assert lines == ['$timescale {} $end'.format(expected),
+                     '$enddefinitions $end']
+
+
+@pytest.mark.parametrize('timescale, exc_type', [
+    ('2 us', ValueError),
+    ('1 Gs', ValueError),
+    ((), ValueError),
+    (('1', 'ns'), ValueError),
+    ((1, 'us', 'ns'), ValueError),
+    (100, TypeError),
+])
+def test_vcd_timescale_invalid(capsys, timescale, exc_type):
+    with pytest.raises(exc_type):
+        VCDWriter(sys.stdout, timescale=timescale)
 
 
 def test_vcd_init_empty_date(capsys):

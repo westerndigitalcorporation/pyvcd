@@ -27,7 +27,10 @@ class VCDWriter(object):
     A VCD file captures time-ordered changes to the value of variables.
 
     :param file file: A file-like object to write the VCD data.
-    :param str timescale: scale of the VCD timestamps.
+    :param timescale:
+        Scale of the VCD timestamps. The timescale may either be a string or a
+        tuple containing an (int, str) pair.
+    :type timescale: str, tuple
     :param str date: Optional `$date` string used in the VCD header.
     :param str comment: Optional `$comment` string used in the VCD header.
     :param str version: Optional `$version` string used in the VCD header.
@@ -56,9 +59,8 @@ class VCDWriter(object):
                  version='', default_scope_type='module', scope_sep='.',
                  check_values=True):
         self._ofile = file
-        self._check_timescale(timescale)
         self._header_keywords = {
-            '$timescale': timescale,
+            '$timescale': self._check_timescale(timescale),
             '$date': str(datetime.datetime.now()) if date is None else date,
             '$comment': comment,
             '$version': version,
@@ -299,17 +301,36 @@ class VCDWriter(object):
 
     @classmethod
     def _check_timescale(cls, timescale):
-        if not isinstance(timescale, six.string_types):
-            raise TypeError('Invalid timescale type {}'.format(timescale))
-        for num in sorted(cls.TIMESCALE_NUMS, reverse=True):
-            num_str = str(num)
-            if timescale.startswith(num_str):
-                unit = timescale[len(num_str):].lstrip(' ')
-                break
+        if isinstance(timescale, (list, tuple)):
+            if len(timescale) == 1:
+                num_str = '1'
+                unit = timescale[0]
+            elif len(timescale) == 2:
+                num, unit = timescale
+                if num not in cls.TIMESCALE_NUMS:
+                    raise ValueError('Invalid timescale num {}'.format(num))
+                num_str = str(num)
+            else:
+                raise ValueError('Invalid timescale {}'.format(timescale))
+        elif isinstance(timescale, six.string_types):
+            if timescale in cls.TIMESCALE_UNITS:
+                num_str = '1'
+                unit = timescale
+            else:
+                for num in sorted(cls.TIMESCALE_NUMS, reverse=True):
+                    num_str = str(num)
+                    if timescale.startswith(num_str):
+                        unit = timescale[len(num_str):].lstrip(' ')
+                        break
+                else:
+                    raise ValueError(
+                        'Invalid timescale num {}'.format(timescale))
         else:
-            raise ValueError('Invalid timescale num {}'.format(timescale))
+            raise TypeError('Invalid timescale type {}'
+                            .format(type(timescale).__name__))
         if unit not in cls.TIMESCALE_UNITS:
             raise ValueError('Invalid timescale unit "{}"'.format(unit))
+        return ' '.join([num_str, unit])
 
     def __enter__(self):
         return self
