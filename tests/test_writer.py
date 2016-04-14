@@ -213,6 +213,14 @@ def test_vcd_register_int(capsys):
     assert 'bx' in out
 
 
+def test_vcd_register_int_tuple(capsys):
+    with VCDWriter(sys.stdout, date='') as vcd:
+        vcd.register_int('scope', 'a', (8, 4, 1))
+    out = capsys.readouterr()[0]
+    assert '$var integer 13 0 a $end' in out
+    assert 'bx 0' in out
+
+
 def test_vcd_register_real(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_real('scope', 'a')
@@ -433,24 +441,44 @@ def test_variable():
         var.format_value(0)
 
 
-def test_vector_var_3bit():
-    bin_u_s = [
-        ('b0 v', 0, 0),
-        ('b1 v', 1, 1),
-        ('b10 v', 2, 2),
-        ('b11 v', 3, 3),
-        ('b100 v', 4, -4),
-        ('b101 v', 5, -3),
-        ('b110 v', 6, -2),
-        ('b111 v', 7, -1),
-    ]
+@pytest.mark.parametrize('expected, unsigned, signed', [
+    ('b0 v', 0, 0),
+    ('b1 v', 1, 1),
+    ('b10 v', 2, 2),
+    ('b11 v', 3, 3),
+    ('b100 v', 4, -4),
+    ('b101 v', 5, -3),
+    ('b110 v', 6, -2),
+    ('b111 v', 7, -1),
+])
+def test_vector_var_3bit(expected, unsigned, signed):
     var = VectorVariable('v', 'integer', 3)
-    for expected, unsigned, signed in bin_u_s:
-        assert expected == var.format_value(unsigned)
-        assert expected == var.format_value(signed)
+    assert expected == var.format_value(unsigned)
+    assert expected == var.format_value(signed)
+
+
+def test_vector_var_3bit_invalid():
+    var = VectorVariable('v', 'integer', 3)
 
     with pytest.raises(ValueError):
         var.format_value(8)
 
     with pytest.raises(ValueError):
         var.format_value(-5)
+
+
+@pytest.mark.parametrize('size, value, expected', [
+    ((8, 4, 1), (0, 0, 0), 'b0 v'),
+    ((8, 4, 1), (1, 0, 0), 'b100000 v'),
+    ((8, 4, 1), (0, 0, 1), 'b1 v'),
+    ((8, 4, 1), (1, 1, 1), 'b100011 v'),
+    ((8, 4, 1), ('z', 'x', '-'), 'bzxxxx- v'),
+    ((8, 4, 1), ('0', '1', None), 'b1z v'),
+    ((8, 4, 1), (0xf, 0, 1), 'b111100001 v'),
+    ((8, 4, 1), (None, 'x', None), 'bzxxxxz v'),
+    ((8, ), (1, ), 'b1 v'),
+    ((8, 32), (0b1010, 0xff00ff00), 'b101011111111000000001111111100000000 v'),
+])
+def test_vector_tuple(size, value, expected):
+    var = VectorVariable('v', 'integer', size)
+    assert expected == var.format_value(value)

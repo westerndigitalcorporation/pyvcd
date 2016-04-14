@@ -9,7 +9,7 @@ from numbers import Number
 import datetime
 
 import six
-from six.moves import zip_longest
+from six.moves import zip, zip_longest
 
 
 class VCDPhaseError(Exception):
@@ -114,7 +114,12 @@ class VCDWriter(object):
         :type scope: str or sequence of str
         :param str name: Name of the variable.
         :param str var_type: One of :const:`VAR_TYPES`.
-        :param int size: Size, in bits, of the variable.
+        :param size:
+            Size, in bits, of the variable. The *size* may be expressed as an
+            int or, for vector variable types, a tuple of int. When the size
+            is expressed as a tuple, the *value* passed to :meth:`change()`
+            must also be a tuple of same arity as the *size* tuple.
+        :type size: int or tuple(int)
         :param init: Optional initial value; defaults to 'x'.
         :param str ident: Optional identifier for use in the VCD stream.
         :raises VCDPhaseError: if any values have been changed
@@ -141,12 +146,20 @@ class VCDWriter(object):
         if ident is None:
             ident = format(self._next_var_id, 'x')
 
+        if isinstance(size, Sequence):
+            size = tuple(size)
+            var_size = sum(size)
+        else:
+            var_size = size
+
         var_str = '$var {var_type} {size} {ident} {name} $end'.format(
-            var_type=var_type, size=size, ident=ident, name=name)
+            var_type=var_type, size=var_size, ident=ident, name=name)
 
         if init is None:
             if var_type == 'real':
                 init = 0.0
+            elif isinstance(size, tuple):
+                init = tuple('x' * len(size))
             else:
                 init = 'x'
 
@@ -166,7 +179,7 @@ class VCDWriter(object):
 
         return var
 
-    def register_int(self, scope, name, size=64, init='x', ident=None):
+    def register_int(self, scope, name, size=64, init=None, ident=None):
         """Register an *integer* variable.
 
         This is a convenience wrapper for :meth:`register_var()`.
@@ -247,7 +260,10 @@ class VCDWriter(object):
         :param Variable var: :class:`Variable` instance (i.e. from
                              :meth:`register_var()`).
         :param int timestamp: Current simulation time.
-        :param value: New value for *var*.
+        :param value:
+            New value for *var*. For :class:`VectorVariable`, if the variable's
+            *size* is a tuple, then *value* must be a tuple of the same arity.
+
         :raises ValueError: if the value is not valid for *var*.
         :raises VCDPhaseError: if the timestamp is out of order or the
                                :class:`VCDWriter` instance is closed.
@@ -275,7 +291,7 @@ class VCDWriter(object):
     def _get_scope_tuple(self, scope):
         if isinstance(scope, six.string_types):
             return tuple(scope.split(self._scope_sep))
-        if isinstance(scope, Sequence):
+        if isinstance(scope, (list, tuple)):
             return tuple(scope)
         else:
             raise TypeError('Invalid scope {}'.format(scope))
@@ -494,19 +510,48 @@ class VectorVariable(Variable):
             string values.
 
         """
+        if isinstance(self.size, tuple):
+            # The string is built-up right-to-left in order to minimize/avoid
+            # left-extension in the final value string.
+            vstr_list = []
+            vstr_len = 0
+            size_sum = 0
+            for i, (v, size) in enumerate(zip(reversed(value),
+                                              reversed(self.size))):
+                vstr = self._format_value(v, size, check)
+                if not vstr_list:
+                    vstr_list.insert(0, vstr)
+                    vstr_len += len(vstr)
+                else:
+                    leftc = vstr_list[0][0]
+                    rightc = vstr[0]
+                    if len(vstr) > 1 or ((rightc != leftc or leftc == '1') and
+                                         (rightc != '0' or leftc != '1')):
+                        extendc = '0' if leftc == '1' else leftc
+                        extend_size = size_sum - vstr_len
+                        vstr_list.insert(0, extendc * extend_size)
+                        vstr_list.insert(0, vstr)
+                        vstr_len += extend_size + len(vstr)
+                size_sum += size
+            value_str = ''.join(vstr_list)
+        else:
+            value_str = self._format_value(value, self.size, check)
+        return 'b{} {}'.format(value_str, self.ident)
+
+    def _format_value(self, value, size, check):
         if isinstance(value, six.integer_types):
-            max_val = 1 << self.size
+            max_val = 1 << size
             if check and (-value > (max_val >> 1) or value >= max_val):
                 raise ValueError('Value ({}) not representable in {} bits'
-                                 .format(value, self.size))
+                                 .format(value, size))
             if value < 0:
                 value += max_val
-            return 'b{:b} {}'.format(value, self.ident)
+            return format(value, 'b')
         elif value is None:
-            return 'bz ' + self.ident
+            return 'z'
         else:
             if check and (not isinstance(value, six.string_types) or
-                          len(value) > self.size or
-                          any(c not in '01xzXZ' for c in value)):
+                          len(value) > size or
+                          any(c not in '01xzXZ-' for c in value)):
                 raise ValueError('Invalid vector value ({})'.format(value))
-            return 'b{} {}'.format(value, self.ident)
+            return value
