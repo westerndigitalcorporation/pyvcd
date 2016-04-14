@@ -234,7 +234,7 @@ def test_vcd_register_event(capsys):
         vcd.register_event('scope', 'a')
     out = capsys.readouterr()[0]
     assert '$var event 1 0 a $end' in out
-    assert 'z0' in out
+    assert 'z0' not in out
 
 
 def test_vcd_scalar_var(capsys):

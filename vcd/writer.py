@@ -170,7 +170,8 @@ class VCDWriter(object):
         else:
             var = VectorVariable(ident, var_type, size)
 
-        self.change(var, 0, init)
+        if var_type != 'event':
+            self.change(var, 0, init)
 
         # Only alter state after change_func() succeeds
         self._next_var_id += 1
@@ -199,7 +200,7 @@ class VCDWriter(object):
         """
         return self.register_var(scope, name, 'real', size, init, ident=None)
 
-    def register_event(self, scope, name, size=1, init='z', ident=None):
+    def register_event(self, scope, name, size=1, init=None, ident=None):
         """Register event variable.
 
         This is a convenience wrapper for :meth:`register_var()`.
