@@ -98,7 +98,8 @@ class VCDWriter(object):
         scope_tuple = self._get_scope_tuple(scope)
         self._scope_types[scope_tuple] = scope_type
 
-    def register_var(self, scope, name, var_type, size, init=None, ident=None):
+    def register_var(self, scope, name, var_type, size=None, init=None,
+                     ident=None):
         """Register a VCD variable and return function to change value.
 
         All VCD variables must be registered prior to any value changes.
@@ -118,10 +119,12 @@ class VCDWriter(object):
         :param str var_type: One of :const:`VAR_TYPES`.
         :param size:
             Size, in bits, of the variable. The *size* may be expressed as an
-            int or, for vector variable types, a tuple of int. When the size
-            is expressed as a tuple, the *value* passed to :meth:`change()`
-            must also be a tuple of same arity as the *size* tuple.
-        :type size: int or tuple(int)
+            int or, for vector variable types, a tuple of int. When the size is
+            expressed as a tuple, the *value* passed to :meth:`change()` must
+            also be a tuple of same arity as the *size* tuple. Some variable
+            types ('integer', 'real', 'realtime', and 'event') have a default
+            size and thus *size* may be ``None`` for those variable types.
+        :type size: int or tuple(int) or None
         :param init: Optional initial value; defaults to 'x'.
         :param str ident: Optional identifier for use in the VCD stream.
         :raises VCDPhaseError: if any values have been changed
@@ -147,6 +150,15 @@ class VCDWriter(object):
 
         if ident is None:
             ident = format(self._next_var_id, 'x')
+
+        if size is None:
+            if var_type in ['integer', 'real', 'realtime']:
+                size = 64
+            elif var_type == 'event':
+                size = 1
+            else:
+                raise ValueError(
+                    'Must supply size for {} var_type'.format(var_type))
 
         if isinstance(size, Sequence):
             size = tuple(size)
@@ -181,36 +193,6 @@ class VCDWriter(object):
         scope_names.append(name)
 
         return var
-
-    def register_int(self, scope, name, size=64, init=None, ident=None):
-        """Register an *integer* variable.
-
-        This is a convenience wrapper for :meth:`register_var()`.
-
-        :rtype: :class:`VectorVariable`
-
-        """
-        return self.register_var(scope, name, 'integer', size, init, ident)
-
-    def register_real(self, scope, name, size=64, init=0.0, ident=None):
-        """Register real variable.
-
-        This is a convenience wrapper for :meth:`register_var()`.
-
-        :rtype: :class:`RealVariable`
-
-        """
-        return self.register_var(scope, name, 'real', size, init, ident=None)
-
-    def register_event(self, scope, name, size=1, init=None, ident=None):
-        """Register event variable.
-
-        This is a convenience wrapper for :meth:`register_var()`.
-
-        :rtype: :class:`ScalarVariable`
-
-        """
-        return self.register_var(scope, name, 'event', size, init, ident)
 
     def dump_off(self, timestamp):
         """Suspend dumping to VCD file."""

@@ -73,14 +73,14 @@ def test_vcd_close(capsys):
     assert lines == ['$timescale 1 us $end',
                      '$enddefinitions $end']
     with pytest.raises(VCDPhaseError):
-        vcd.register_int('a', 'b')
+        vcd.register_var('a', 'b', 'integer')
     vcd.close()  # Idempotency test
     assert not split_lines(capsys)
 
 
 def test_vcd_change_after_close(capsys):
     vcd = VCDWriter(sys.stdout, date='')
-    var = vcd.register_int('a', 'b')
+    var = vcd.register_var('a', 'b', 'integer')
     assert not split_lines(capsys)
     vcd.close()
     with pytest.raises(VCDPhaseError):
@@ -199,6 +199,12 @@ def test_vcd_late_registration(capsys):
             vcd.register_var('aaa.bbb', 'nn2', 'integer', 8)
 
 
+def test_vcd_missing_size(capsys):
+    with VCDWriter(sys.stdout, date='today') as vcd:
+        with pytest.raises(ValueError):
+            vcd.register_var('a.b.c', 'name', 'wire', size=None)
+
+
 def test_vcd_invalid_var_type(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         with pytest.raises(ValueError):
@@ -228,7 +234,7 @@ def test_vcd_change_out_of_order(capsys):
 
 def test_vcd_register_int(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
-        vcd.register_int('scope', 'a')
+        vcd.register_var('scope', 'a', 'integer')
     out = capsys.readouterr()[0]
     assert '$var integer 64 0 a $end' in out
     assert 'bx' in out
@@ -236,7 +242,7 @@ def test_vcd_register_int(capsys):
 
 def test_vcd_register_int_tuple(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
-        vcd.register_int('scope', 'a', (8, 4, 1))
+        vcd.register_var('scope', 'a', 'integer', (8, 4, 1))
     out = capsys.readouterr()[0]
     assert '$var integer 13 0 a $end' in out
     assert 'bx 0' in out
@@ -244,7 +250,7 @@ def test_vcd_register_int_tuple(capsys):
 
 def test_vcd_register_real(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
-        vcd.register_real('scope', 'a')
+        vcd.register_var('scope', 'a', 'real')
     out = capsys.readouterr()[0]
     assert '$var real 64 0 a $end' in out
     assert 'r0' in out
@@ -252,7 +258,7 @@ def test_vcd_register_real(capsys):
 
 def test_vcd_register_event(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
-        vcd.register_event('scope', 'a')
+        vcd.register_var('scope', 'a', 'event')
     out = capsys.readouterr()[0]
     assert '$var event 1 0 a $end' in out
     assert 'z0' not in out
@@ -400,7 +406,7 @@ def test_vcd_dump_off_early(capsys):
 
 def test_vcd_dump_off_real(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
-        v0 = vcd.register_real('scope', 'a')
+        v0 = vcd.register_var('scope', 'a', 'real')
         vcd.change(v0, 1, 1.0)
         vcd.dump_off(2)
         vcd.change(v0, 3, 3.0)
