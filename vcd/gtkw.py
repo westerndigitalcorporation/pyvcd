@@ -592,7 +592,8 @@ def spawn_gtkwave_interactive(dump_path, save_path,
 
     """
     import signal
-    import sys
+
+    stdin_fd, stdout_fd, stderr_fd = 0, 1, 2
 
     if not os.fork():
         shmidcat_rd_fd, tail_wr_fd = os.pipe()
@@ -600,8 +601,8 @@ def spawn_gtkwave_interactive(dump_path, save_path,
         tail_pid = os.fork()
         if not tail_pid:
             os.close(shmidcat_rd_fd)
-            os.dup2(tail_wr_fd, sys.stdout.fileno())
-            os.execlp('tail', 'tail', '-f', dump_path)
+            os.dup2(tail_wr_fd, stdout_fd)
+            os.execlp('tail', 'tail', '-n', '+0', '-f', dump_path)
 
         os.close(tail_wr_fd)
         gtkwave_rd_fd, shmidcat_wr_fd = os.pipe()
@@ -609,8 +610,8 @@ def spawn_gtkwave_interactive(dump_path, save_path,
         shmidcat_pid = os.fork()
         if not shmidcat_pid:
             os.close(gtkwave_rd_fd)
-            os.dup2(shmidcat_rd_fd, sys.stdin.fileno())
-            os.dup2(shmidcat_wr_fd, sys.stdout.fileno())
+            os.dup2(shmidcat_rd_fd, stdin_fd)
+            os.dup2(shmidcat_wr_fd, stdout_fd)
             os.execlp('shmidcat', 'shmidcat')
 
         os.close(shmidcat_rd_fd)
@@ -618,10 +619,11 @@ def spawn_gtkwave_interactive(dump_path, save_path,
 
         gtkwave_pid = os.fork()
         if not gtkwave_pid:
-            os.dup2(gtkwave_rd_fd, sys.stdin.fileno())
+            os.dup2(gtkwave_rd_fd, stdin_fd)
             if quiet:
-                os.close(sys.stdout.fileno())
-                os.close(sys.stderr.fileno())
+                devnull = open(os.devnull, 'w')
+                os.dup2(devnull.fileno(), stdout_fd)
+                os.dup2(devnull.fileno(), stderr_fd)
             os.execlp('gtkwave',
                       'gtkwave', '--vcd', '--interactive', save_path)
 
