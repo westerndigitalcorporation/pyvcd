@@ -310,9 +310,9 @@ class GTKWSave(object):
 
         .. Note::
 
-            GTKWave versions <= 3.3.64 require vector signals to have a bit
-            range suffix. For example, an 8-bit vector variable "module.myint"
-            would be known by GTKWave as "module.myint[7:0]".
+            GTKWave versions <= 3.3.64 require vector signal names to have a
+            bit range suffix. For example, an 8-bit vector variable
+            "module.myint" would be known by GTKWave as "module.myint[7:0]".
 
             GTKWave versions after 3.3.64 do not use bit-range suffixes.
 
