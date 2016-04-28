@@ -296,11 +296,6 @@ class GTKWSave(object):
               translate_filter_proc=None):
         """Add signal trace to save file.
 
-        If signal is a vector, its *name* must include a valid bit range
-        suffix. For example, an 8-bit 'integer' signal named 'module.myint'
-        would need a trace name of 'module.myint[7:0]'. Real and scalar data
-        values do not require such a suffix.
-
         :param str name: fully-qualified name of signal to trace.
         :param str alias: optional alias to display instead of the *name*.
         :param color: optional color to use for the signal's trace.
@@ -312,6 +307,14 @@ class GTKWSave(object):
         :param list extraflags: extra flags to apply to the trace.
         :param str translate_filter_file: path to translate filter file.
         :param str translate_filter_proc: path to translate filter executable.
+
+        .. Note::
+
+            GTKWave versions <= 3.3.64 require vector signals to have a bit
+            range suffix. For example, an 8-bit vector variable "module.myint"
+            would be known by GTKWave as "module.myint[7:0]".
+
+            GTKWave versions after 3.3.64 do not use bit-range suffixes.
 
         """
         if datafmt not in ['hex', 'dec', 'bin', 'oct', 'ascii', 'real',
@@ -346,7 +349,7 @@ class GTKWSave(object):
         This allows each individual bit of a vector signal to have its own
         trace (and trace configuration).
 
-            >>> name = 'mod.myint[3:0]'
+            >>> name = 'mod.myint'
             >>> with gtkw.trace_bits(name):
             ...     gtkw.trace_bit(0, name)
             ...     gtkw.trace_bit(1, name)
