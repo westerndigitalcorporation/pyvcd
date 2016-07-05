@@ -13,8 +13,8 @@ setup(
     long_description='\n\n'.join(
         open(f, 'rb').read().decode('utf-8')
         for f in ['README.rst', 'LICENSE.txt']),
-    # url='https://',
-    # download_url='https://',
+    url='http://pyvcd.readthedocs.io/en/latest/',
+    download_url='https://github.com/SanDisk-Open-Source/pyvcd',
     license='MIT',
     install_requires=['six'],
     packages=['vcd'],
