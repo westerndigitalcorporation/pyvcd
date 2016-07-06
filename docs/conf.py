@@ -21,7 +21,7 @@ templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
 project = 'pyvcd'
-copyright = '2016, SanDisk Corporation'
+copyright = '2016, Western Digital Corporation'
 author = 'Peter Grayson and Steven Sprouse'
 version = get_version(root='..', relative_to=__file__)
 # release = '0.0.1'
