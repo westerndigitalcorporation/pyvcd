@@ -16,7 +16,7 @@ Visit `PyVCD on GitHub <https://github.com/SanDisk-Open-Source/pyvcd>`_.
 Quick Start
 -----------
 
-.. code-block:: python
+.. code::
 
     >>> import sys
     >>> from vcd import VCDWriter
