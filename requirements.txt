@@ -2,6 +2,8 @@ coverage
 flake8
 pytest
 pytest-cov
+setuptools_scm
 six
 tox
+twine
 Sphinx

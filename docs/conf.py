@@ -6,7 +6,7 @@
 import sys
 import os
 
-import vcd
+from setuptools_scm import get_version
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -23,7 +23,7 @@ master_doc = 'index'
 project = 'pyvcd'
 copyright = '2016, SanDisk Corporation'
 author = 'Peter Grayson and Steven Sprouse'
-version = vcd.__version__
+version = get_version(root='..', relative_to=__file__)
 # release = '0.0.1'
 language = None
 exclude_patterns = ['_build']

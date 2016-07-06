@@ -1,12 +1,9 @@
 # encoding: utf-8
 from setuptools import setup
 
-import vcd
-
 
 setup(
     name='pyvcd',
-    version=vcd.__version__,
     author='Peter Grayson',
     author_email='jpgrayson@gmail.com',
     description='Python VCD file support.',
@@ -16,6 +13,8 @@ setup(
     url='http://pyvcd.readthedocs.io/en/latest/',
     download_url='https://github.com/SanDisk-Open-Source/pyvcd',
     license='MIT',
+    setup_requires=['setuptools_scm'],
+    use_scm_version=True,
     install_requires=['six'],
     packages=['vcd'],
     include_package_data=True,

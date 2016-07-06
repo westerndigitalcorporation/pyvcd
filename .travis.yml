@@ -12,6 +12,6 @@ env:
   - TOXENV=flake8
 
 install:
-  - pip install six tox
+  - pip install tox
 
 script: tox
