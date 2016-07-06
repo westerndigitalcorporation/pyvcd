@@ -10,6 +10,7 @@ Contents:
    vcd.writer
    vcd.gtkw
 
+.. include:: ../README.rst
 
 Indices and tables
 ==================

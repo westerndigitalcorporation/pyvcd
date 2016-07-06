@@ -4,6 +4,15 @@ PyVCD
 The PyVCD package writes Value Change Dump (VCD) files as specified in
 IEEE 1364-2005.
 
+Visit `PyVCD on GitHub <https://github.com/SanDisk-Open-Source/pyvcd>`_.
+
+.. image:: https://readthedocs.org/projects/pyvcd/badge/?version=latest
+    :target: http://pyvcd.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. image:: https://travis-ci.org/SanDisk-Open-Source/pyvcd.svg?branch=master
+    :target: https://travis-ci.org/SanDisk-Open-Source/pyvcd
+
 Quick Start
 -----------
 
