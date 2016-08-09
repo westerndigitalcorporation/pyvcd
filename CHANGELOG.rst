@@ -1,6 +1,10 @@
 Changelog
 =========
 
+pyvcd-0.1.2 (2016-08-09)
+------------------------
+* GTKWSave per-group color cycles
+
 pyvcd-0.1.1 (2016-07-06)
 ------------------------
 * Improve README.rst
