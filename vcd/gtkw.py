@@ -48,7 +48,7 @@ class GTKWSave(object):
         self.file = savefile
         self.path = getattr(savefile, 'name', None)
         self._flags = 0
-        self._color = 0
+        self._color_stack = [0]
         self._filter_files = []
         self._filter_procs = []
 
@@ -65,10 +65,10 @@ class GTKWSave(object):
             if isinstance(color, six.string_types):
                 color = color_map[color]
             if color == -1:
-                self._color = (self._color + 1) % 8
+                self._color_stack[-1] = (self._color_stack[-1] + 1) % 8
             else:
-                self._color = color
-            self._p('[color] {}'.format(self._color))
+                self._color_stack[-1] = color
+            self._p('[color] {}'.format(self._color_stack[-1]))
 
     def _set_translate_filter_file(self, filter_path):
         if filter_path:
@@ -252,6 +252,7 @@ class GTKWSave(object):
             flags.append('highlight')
         self._set_flags(encode_flags(flags))
         self._p('-{}'.format(name))
+        self._color_stack.append(0)
 
     def end_group(self, name, closed=False, highlight=False):
         """End a signal trace group.
@@ -272,6 +273,7 @@ class GTKWSave(object):
             flags.append('highlight')
         self._set_flags(encode_flags(flags))
         self._p('-{}'.format(name))
+        self._color_stack.pop(-1)
 
     def blank(self, label='', analog_extend=False, highlight=False):
         """Add blank or label to trace signals list.

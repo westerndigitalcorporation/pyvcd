@@ -329,6 +329,42 @@ def test_gtkw_trace_bits_extra(gtkw):
         '-group_end']
 
 
+def test_gtkw_color_stack(gtkw):
+    gtkw.trace('a', color='cycle')
+    gtkw.trace('b', color='cycle')
+    with gtkw.group('mygroup'):
+        gtkw.trace('x', color='cycle')
+        gtkw.trace('y', color='cycle')
+        gtkw.trace('z', color='cycle')
+    gtkw.trace('c', color='cycle')
+    gtkw.trace('d', color='cycle')
+
+    lines = gtkw.file.getvalue().splitlines()
+
+    assert lines == [
+        '@22',
+        '[color] 1',
+        'a',
+        '[color] 2',
+        'b',
+        '@800200',
+        '-mygroup',
+        '@22',
+        '[color] 1',
+        'x',
+        '[color] 2',
+        'y',
+        '[color] 3',
+        'z',
+        '@1000200',
+        '-mygroup',
+        '@22',
+        '[color] 3',
+        'c',
+        '[color] 4',
+        'd']
+
+
 def test_xlate_filter():
     xlatef = make_translation_filter(size=8, translations=[
         (16, "Sixteen", "Magenta"),
