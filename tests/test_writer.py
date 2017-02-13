@@ -169,6 +169,56 @@ def test_vcd_scopes(capsys):
         assert line.startswith(expected)
 
 
+def test_vcd_scopes_timestamp(capsys):
+    with VCDWriter(sys.stdout, date='today', init_timestamp=123) as vcd:
+        vcd.set_scope_type('eee.fff.ggg', 'task')
+        vcd.register_var('aaa.bbb', 'nn0', 'integer', 8, init='z')
+        vcd.register_var('aaa.bbb', 'nn1', 'integer', 8)
+        vcd.register_var('aaa', 'nn2', 'integer', 8)
+        vcd.register_var('aaa.bbb.ccc', 'nn3', 'integer', 8)
+        vcd.register_var('aaa.bbb.ddd', 'nn4', 'integer', 8)
+        vcd.register_var('eee.fff.ggg', 'nn5', 'integer', 8)
+        vcd.set_scope_type('aaa.bbb', 'fork')
+        with pytest.raises(TypeError):
+            vcd.set_scope_type({'a', 'b', 'c'}, 'module')
+
+    expected_lines = ['$date',
+                      '$timescale',
+                      '$scope module aaa',
+                      '$var',
+                      '$scope fork bbb',
+                      '$var',
+                      '$var',
+                      '$scope module ccc',
+                      '$var',
+                      '$upscope',
+                      '$scope module ddd',
+                      '$var',
+                      '$upscope',
+                      '$upscope',
+                      '$upscope',
+                      '$scope module eee',
+                      '$scope module fff',
+                      '$scope task ggg',
+                      '$var',
+                      '$upscope',
+                      '$upscope',
+                      '$upscope',
+                      '$enddefinitions',
+                      '#123',
+                      '$dumpvars',
+                      'bz 0',
+                      'bx 1',
+                      'bx 2',
+                      'bx 3',
+                      'bx 4',
+                      'bx 5',
+                      '$end']
+    for line, expected in zip(split_lines(capsys), expected_lines):
+        print(line, '|', expected)
+        assert line.startswith(expected)
+
+
 def test_vcd_scope_tuple(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         vcd.register_var(('aaa', ), 'nn0', 'integer', 8)
