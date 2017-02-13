@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 import datetime
+import os
 import time
 
 import pytest
@@ -26,7 +27,8 @@ def test_gtkw_comments(gtkw):
 
 def test_gtkw_dumpfile(gtkw):
     gtkw.dumpfile('/foo/bar')
-    assert gtkw.file.getvalue() == '[dumpfile] "/foo/bar"\n'
+    assert gtkw.file.getvalue() == '[dumpfile] "{}"\n'.format(
+        os.path.abspath('/foo/bar'))
 
 
 def test_gtkw_dumpfile_none(gtkw):
@@ -87,12 +89,14 @@ def test_gtkw_savefile_none():
     sio.name = '/some/path'
     gtkw = GTKWSave(sio)
     gtkw.savefile()
-    assert sio.getvalue() == '[savefile] "/some/path"\n'
+    assert sio.getvalue() == '[savefile] "{}"\n'.format(
+        os.path.abspath('/some/path'))
 
 
 def test_gtkw_savefile_path(gtkw):
     gtkw.savefile('/foo/bar')
-    assert gtkw.file.getvalue() == '[savefile] "/foo/bar"\n'
+    assert gtkw.file.getvalue() == '[savefile] "{}"\n'.format(
+        os.path.abspath('/foo/bar'))
 
 
 def test_gtkw_savefile_noabs(gtkw):
