@@ -155,6 +155,7 @@ def test_vcd_scopes(capsys):
                       '$upscope',
                       '$upscope',
                       '$enddefinitions',
+                      '#0',
                       '$dumpvars',
                       'bz 0',
                       'bx 1',
