@@ -34,6 +34,7 @@ Quick Start
     $upscope $end
     $upscope $end
     $enddefinitions $end
+    #0
     $dumpvars
     b1010 0
     $end

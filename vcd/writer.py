@@ -57,7 +57,7 @@ class VCDWriter(object):
 
     def __init__(self, file, timescale='1 us', date=None, comment='',
                  version='', default_scope_type='module', scope_sep='.',
-                 check_values=True, init_timestamp=0.0):
+                 check_values=True, init_timestamp=0):
         self._ofile = file
         self._header_keywords = {
             '$timescale': self._check_timescale(timescale),
