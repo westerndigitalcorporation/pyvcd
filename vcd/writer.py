@@ -57,7 +57,7 @@ class VCDWriter(object):
 
     def __init__(self, file, timescale='1 us', date=None, comment='',
                  version='', default_scope_type='module', scope_sep='.',
-                 check_values=True):
+                 check_values=True, init_timestamp=0.0):
         self._ofile = file
         self._header_keywords = {
             '$timescale': self._check_timescale(timescale),
@@ -79,6 +79,7 @@ class VCDWriter(object):
         self._scope_var_names = {}
         self._scope_types = {}
         self._ident_values = OrderedDict()
+        self._init_timestamp = init_timestamp
         self._prev_timestamp = 0
 
     def set_scope_type(self, scope, scope_type):
@@ -403,6 +404,8 @@ class VCDWriter(object):
         assert self._registering
         print(*self._gen_header(), sep='\n', file=self._ofile)
         if self._ident_values:
+            print('#' + str(int(self._init_timestamp)), file=self._ofile)
+            self._prev_timestamp = self._init_timestamp
             self._dump_values('$dumpvars')
             if not self._dumping:
                 self._dump_off(0)
