@@ -37,6 +37,7 @@ class VCDWriter(object):
     :param str default_scope_type: Scope type for scopes where
             :meth:`set_scope_type()` is not called explicitly.
     :param str scope_sep: Separator for scopes specified as strings.
+    :param int init_timestamp: The initial timestamp. default=0
     :raises ValueError: for invalid timescale values
 
     """
@@ -57,7 +58,7 @@ class VCDWriter(object):
 
     def __init__(self, file, timescale='1 us', date=None, comment='',
                  version='', default_scope_type='module', scope_sep='.',
-                 check_values=True):
+                 check_values=True, init_timestamp=0):
         self._ofile = file
         self._header_keywords = {
             '$timescale': self._check_timescale(timescale),
@@ -79,7 +80,7 @@ class VCDWriter(object):
         self._scope_var_names = {}
         self._scope_types = {}
         self._ident_values = OrderedDict()
-        self._prev_timestamp = 0
+        self._timestamp = int(init_timestamp)
 
     def set_scope_type(self, scope, scope_type):
         """Set the scope_type for a given scope.
@@ -185,7 +186,7 @@ class VCDWriter(object):
             var = VectorVariable(ident, var_type, size)
 
         if var_type != 'event':
-            self.change(var, 0, init)
+            self.change(var, self._timestamp, init)
 
         # Only alter state after change_func() succeeds
         self._next_var_id += 1
@@ -254,21 +255,22 @@ class VCDWriter(object):
                                :class:`VCDWriter` instance is closed.
 
         """
-        if timestamp < self._prev_timestamp:
+        if timestamp < self._timestamp:
             raise VCDPhaseError('Out of order value change ({})'.format(var))
         elif self._closed:
             raise VCDPhaseError('Cannot change value after close()')
 
         val_str = var.format_value(value, self._check_values)
+        ts_int = int(timestamp)
 
-        if timestamp and self._registering:
-            self._finalize_registration()
-
-        if timestamp and self._dumping:
-            ts_int = int(timestamp)
-            if ts_int > self._prev_timestamp:
+        if ts_int > self._timestamp:
+            if self._registering:
+                self._finalize_registration()
+            if self._dumping:
                 print('#', ts_int, sep='', file=self._ofile)
-                self._prev_timestamp = ts_int
+            self._timestamp = ts_int
+
+        if self._dumping and not self._registering:
             print(val_str, file=self._ofile)
         else:
             self._ident_values[var.ident] = val_str
@@ -355,7 +357,7 @@ class VCDWriter(object):
             raise VCDPhaseError('Cannot flush() after close()')
         if self._registering:
             self._finalize_registration()
-        if timestamp is not None and timestamp > self._prev_timestamp:
+        if timestamp is not None and timestamp > self._timestamp:
             print("#", int(timestamp), sep='', file=self._ofile)
         self._ofile.flush()
 
@@ -403,9 +405,10 @@ class VCDWriter(object):
         assert self._registering
         print(*self._gen_header(), sep='\n', file=self._ofile)
         if self._ident_values:
+            print('#' + str(int(self._timestamp)), file=self._ofile)
             self._dump_values('$dumpvars')
             if not self._dumping:
-                self._dump_off(0)
+                self._dump_off(self._timestamp)
         self._registering = False
 
         # This state is not needed after registration phase.
