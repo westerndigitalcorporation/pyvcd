@@ -169,6 +169,25 @@ def test_vcd_scopes(capsys):
         assert line.startswith(expected)
 
 
+def test_vcd_init_timestamp(capsys):
+    with VCDWriter(sys.stdout, date='today', init_timestamp=123) as vcd:
+        vcd.register_var('a', 'n', 'integer', 8, init='z')
+
+    expected_lines = ['$date',
+                      '$timescale',
+                      '$scope module a',
+                      '$var integer 8 0 n $end',
+                      '$upscope',
+                      '$enddefinitions',
+                      '#123',
+                      '$dumpvars',
+                      'bz 0',
+                      '$end']
+    for line, expected in zip(split_lines(capsys), expected_lines):
+        print(line, '|', expected)
+        assert line.startswith(expected)
+
+
 def test_vcd_scope_tuple(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         vcd.register_var(('aaa', ), 'nn0', 'integer', 8)
