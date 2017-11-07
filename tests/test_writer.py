@@ -532,3 +532,31 @@ def test_vector_var_3bit_invalid():
 def test_vector_tuple(size, value, expected):
     var = VectorVariable('v', 'integer', size)
     assert expected == var.format_value(value)
+
+
+def test_vcd_string_var(capsys):
+    with VCDWriter(sys.stdout, date='today') as vcd:
+        v0 = vcd.register_var('aaa', 'nn0', 'string')
+        vcd.change(v0, 1, 'hello')
+        vcd.change(v0, 2, '')
+        vcd.change(v0, 3, 'world')
+        with pytest.raises(ValueError):
+            vcd.change(v0, 4, 'no string allowed')
+        vcd.change(v0, 4, None)
+        vcd.change(v0, 5, '!')
+    expected = ['#0',
+                '$dumpvars',
+                'sx 0',
+                '$end',
+                '#1',
+                'shello 0',
+                '#2',
+                's 0',
+                '#3',
+                'sworld 0',
+                '#4',
+                's 0',
+                '#5',
+                's! 0']
+    lines = split_lines(capsys)
+    assert expected == lines[-len(expected):]

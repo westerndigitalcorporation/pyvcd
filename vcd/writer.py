@@ -48,7 +48,7 @@ class VCDWriter(object):
     #: Valid VCD variable types.
     VAR_TYPES = ['event', 'integer', 'parameter', 'real', 'realtime', 'reg',
                  'supply0', 'supply1', 'time', 'tri', 'triand', 'trior',
-                 'trireg', 'tri0', 'tri1', 'wand', 'wire', 'wor']
+                 'trireg', 'tri0', 'tri1', 'wand', 'wire', 'wor', 'string']
 
     #: Valid timescale numbers.
     TIMESCALE_NUMS = [1, 10, 100]
@@ -155,7 +155,7 @@ class VCDWriter(object):
         if size is None:
             if var_type in ['integer', 'real', 'realtime']:
                 size = 64
-            elif var_type == 'event':
+            elif var_type in ['event', 'string']:
                 size = 1
             else:
                 raise ValueError(
@@ -178,7 +178,9 @@ class VCDWriter(object):
             else:
                 init = 'x'
 
-        if size == 1:
+        if var_type == 'string':
+            var = StringVariable(ident, var_type, size)
+        elif size == 1:
             var = ScalarVariable(ident, var_type, size)
         elif var_type == 'real':
             var = RealVariable(ident, var_type, size)
@@ -463,6 +465,33 @@ class ScalarVariable(Variable):
             return '1' + self.ident
         else:
             return '0' + self.ident
+
+
+class StringVariable(Variable):
+    """String variable as known by GTKWave.
+
+    Any "string" (character-chain) can be displayed as a change. This type is
+    only supported by GTKWave.
+
+    """
+
+    __slots__ = ()
+
+    def format_value(self, value, check=True):
+        """Format scalar value change for VCD stream.
+
+        :param value: a string, str()
+        :type value: str
+        :raises ValueError: for invalid *value*.
+        :returns: string representing value change for use in a VCD stream.
+
+        """
+        if value is None:
+            value = ''
+        if check and (not isinstance(value, six.string_types) or ' ' in value):
+            raise ValueError('Invalid string value ({})'.format(value))
+
+        return 's{} {}'.format(value, self.ident)
 
 
 class RealVariable(Variable):
