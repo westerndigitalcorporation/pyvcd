@@ -1,27 +1,34 @@
-dist: trusty
-sudo: false
-
+group: travis_latest
 language: python
+cache: pip
 
 matrix:
   include:
     - python: '2.7'
+      env: COVERAGE=--cov
     - python: 'pypy'
-    - python: '3.3'
     - python: '3.4'
     - python: '3.5'
     - python: '3.6'
+    - python: '3.7'
+      env: COVERAGE=--cov
+      dist: xenial
     - python: 'pypy3'
+    - python: '3.8-dev'
+      dist: xenial
+    - python: 'nightly'
+      dist: xenial
+  allow_failures:
+    - python: '3.8-dev'
+    - python: 'nightly'
 
 install:
   - pip install --upgrade -r requirements.txt
-  - pip install coveralls
+  - if [ -n "$COVERAGE" ]; then pip install coveralls; fi
   - pip install -e .
 
-script: py.test --flake8 --cov
+script:
+  - py.test --flake8 $COVERAGE
 
 after_success:
-  coveralls
-
-cache:
-  - pip
+  - if [ -n "$COVERAGE" ]; then coveralls; fi
