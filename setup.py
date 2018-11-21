@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
     name='pyvcd',
     author='Peter Grayson',
-    author_email='jpgrayson@gmail.com',
+    author_email='pete@jpgrayson.net',
     description='Python VCD file support.',
     long_description='\n\n'.join(
         open(f, 'rb').read().decode('utf-8')
