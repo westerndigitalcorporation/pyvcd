@@ -4,12 +4,18 @@ This module provides :class:`VCDWriter` for writing VCD files.
 
 """
 from __future__ import print_function
-from collections import OrderedDict, Sequence
+
+from collections import OrderedDict
 from numbers import Number
 import datetime
 
-import six
 from six.moves import zip, zip_longest
+import six
+
+try:
+    from collections.abc import Sequence
+except ImportError:
+    from collections import Sequence
 
 
 class VCDPhaseError(Exception):
