@@ -1,6 +1,11 @@
 Changelog
 =========
 
+pyvcd-0.1.4 (2018-12-18)
+------------------------
+* Add "string" variable type
+* Repair deprecated import of ABC's from collections.abc
+
 pyvcd-0.1.3 (2017-02-21)
 ------------------------
 * Allow initial timestamp other than 0 (#2)
