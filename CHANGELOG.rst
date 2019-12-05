@@ -1,6 +1,11 @@
 Changelog
 =========
 
+pyvcd-0.1.5 (2019-12-04)
+------------------------
+* Improve runtime performance by using write() (#9)
+* Update package classifies to note Python 3.8 support
+
 pyvcd-0.1.4 (2018-12-18)
 ------------------------
 * Add "string" variable type
