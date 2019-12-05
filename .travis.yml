@@ -4,22 +4,18 @@ cache: pip
 
 matrix:
   include:
+    - python: '3.8'
+      dist: xenial
+      env: COVERAGE=--cov
+    - python: '3.7'
+    - python: '3.6'
+    - python: '3.5'
+    - python: '3.4'
+    - python: 'pypy3'
     - python: '2.7'
       env: COVERAGE=--cov
     - python: 'pypy'
-    - python: '3.4'
-    - python: '3.5'
-    - python: '3.6'
-    - python: '3.7'
-      env: COVERAGE=--cov
-      dist: xenial
-    - python: 'pypy3'
-    - python: '3.8-dev'
-      dist: xenial
-    - python: 'nightly'
-      dist: xenial
   allow_failures:
-    - python: '3.8-dev'
     - python: 'nightly'
 
 install:
