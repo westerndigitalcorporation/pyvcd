@@ -3,8 +3,6 @@
 This module provides :class:`VCDWriter` for writing VCD files.
 
 """
-from __future__ import print_function
-
 from collections import OrderedDict
 from numbers import Number
 import datetime
@@ -210,30 +208,29 @@ class VCDWriter(object):
         self._dumping = False
 
     def _dump_off(self, timestamp):
-        print('#' + str(int(timestamp)), file=self._ofile)
-        print('$dumpoff', file=self._ofile)
+        self._ofile.write('#{}\n'.format(int(timestamp)))
+        self._ofile.write('$dumpoff\n')
         for ident, val_str in six.iteritems(self._ident_values):
             if val_str[0] == 'b':
-                print('bx', ident, file=self._ofile)
+                self._ofile.write('bx {}\n'.format(ident))
             elif val_str[0] == 'r':
                 pass  # real variables cannot have 'z' or 'x' state
             else:
-                print('x', ident, sep='', file=self._ofile)
-        print('$end', file=self._ofile)
+                self._ofile.write('x{ident}\n')
+        self._ofile.write('$end\n')
 
     def dump_on(self, timestamp):
         """Resume dumping to VCD file."""
         if not self._dumping and not self._registering and self._ident_values:
-            print('#' + str(int(timestamp)), file=self._ofile)
+            self._ofile.write('#{}\n'.format(int(timestamp)))
             self._dump_values('$dumpon')
         self._dumping = True
 
     def _dump_values(self, keyword):
-        print(keyword, file=self._ofile)
+        self._ofile.write(keyword + '\n')
         # TODO: events should be excluded
-        print(*six.itervalues(self._ident_values),
-              sep='\n', file=self._ofile)
-        print('$end', file=self._ofile)
+        self._ofile.write('\n'.join(six.itervalues(self._ident_values)))
+        self._ofile.write('\n$end\n')
 
     def change(self, var, timestamp, value):
         """Change variable's value in VCD stream.
@@ -275,11 +272,11 @@ class VCDWriter(object):
             if self._registering:
                 self._finalize_registration()
             if self._dumping:
-                print('#', ts_int, sep='', file=self._ofile)
+                self._ofile.write('#{}\n'.format(ts_int))
             self._timestamp = ts_int
 
         if self._dumping and not self._registering:
-            print(val_str, file=self._ofile)
+            self._ofile.write(val_str + '\n')
         else:
             self._ident_values[var.ident] = val_str
 
@@ -366,7 +363,7 @@ class VCDWriter(object):
         if self._registering:
             self._finalize_registration()
         if timestamp is not None and timestamp > self._timestamp:
-            print("#", int(timestamp), sep='', file=self._ofile)
+            self._ofile.write('#{}\n'.format(int(timestamp)))
         self._ofile.flush()
 
     def _gen_header(self):
@@ -411,9 +408,9 @@ class VCDWriter(object):
 
     def _finalize_registration(self):
         assert self._registering
-        print(*self._gen_header(), sep='\n', file=self._ofile)
+        self._ofile.write('\n'.join(self._gen_header()) + '\n')
         if self._ident_values:
-            print('#' + str(int(self._timestamp)), file=self._ofile)
+            self._ofile.write('#{}\n'.format(int(self._timestamp)))
             self._dump_values('$dumpvars')
             if not self._dumping:
                 self._dump_off(self._timestamp)
