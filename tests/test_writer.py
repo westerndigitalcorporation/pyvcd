@@ -2,7 +2,9 @@
 
 from __future__ import print_function
 import sys
+import os
 import pytest
+import pytictoc
 
 from vcd.writer import VCDWriter, VCDPhaseError, Variable, VectorVariable
 
@@ -560,3 +562,22 @@ def test_vcd_string_var(capsys):
                 's! 0']
     lines = split_lines(capsys)
     assert expected == lines[-len(expected):]
+
+
+def test_execution_speed(tmpdir):
+    """Manual test for how fast we can write to a VCD file
+
+    See https://github.com/SanDisk-Open-Source/pyvcd/issues/9
+
+    """
+    fptr = open(os.path.sep.join([str(tmpdir), 'test.vcd']), 'w+')
+    t = pytictoc.TicToc()
+    t.tic()
+    with VCDWriter(fptr, timescale=(10, 'ns'), date='today') as writer:
+        counter_var = writer.register_var('a.b.c', 'counter', 'integer',
+                                          size=8)
+        for i in range(1000, 300000, 300):
+            for timestamp, value in enumerate(range(10, 200, 2)):
+                writer.change(counter_var, i + timestamp, value)
+    fptr.close()
+    t.toc()
