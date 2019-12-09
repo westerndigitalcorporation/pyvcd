@@ -62,7 +62,7 @@ class VCDWriter(object):
 
     def __init__(self, file, timescale='1 us', date=None, comment='',
                  version='', default_scope_type='module', scope_sep='.',
-                 check_values=True, init_timestamp=0):
+                 check_values=True, init_timestamp=0, no_duplicates=False):
         self._ofile = file
         self._header_keywords = {
             '$timescale': self._check_timescale(timescale),
@@ -76,6 +76,7 @@ class VCDWriter(object):
         self._default_scope_type = default_scope_type
         self._scope_sep = scope_sep
         self._check_values = check_values
+        self._no_duplicates = no_duplicates
         self._registering = True
         self._closed = False
         self._dumping = True
@@ -266,6 +267,12 @@ class VCDWriter(object):
             raise VCDPhaseError('Cannot change value after close()')
 
         val_str = var.format_value(value, self._check_values)
+
+        if self._no_duplicates:
+            if val_str == var.actual_value:
+                return
+            else:
+                var.actual_value = val_str
         ts_int = int(timestamp)
 
         if ts_int > self._timestamp:
@@ -425,7 +432,7 @@ class VCDWriter(object):
 class Variable(object):
     """VCD variable details needed to call :meth:`VCDWriter.change()`."""
 
-    __slots__ = ('ident', 'type', 'size')
+    __slots__ = ('ident', 'type', 'size', 'actual_value')
 
     def __init__(self, ident, type, size):
         #: Identifier used in VCD output stream.
@@ -434,6 +441,8 @@ class Variable(object):
         self.type = type
         #: Size, in bits, of variable.
         self.size = size
+        #: Actual value. Used to remove duplicates
+        self.actual_value = None
 
     def format_value(self, value, check=True):
         """Format value change for use in VCD stream."""

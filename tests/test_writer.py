@@ -119,6 +119,15 @@ def test_vcd_one_var(capsys):
     assert lines[-1] == 'b1010 foo'
 
 
+def test_vcd_no_duplicates(capsys):
+    with VCDWriter(sys.stdout, date='today', no_duplicates=True) as vcd:
+        var = vcd.register_var('sss', 'nnn', 'integer', 32, ident='foo')
+        vcd.change(var, 0, 10)
+        vcd.change(var, 1, 10)
+    lines = split_lines(capsys)
+    assert lines[-2] != '#1'
+
+
 def test_vcd_scopes(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         vcd.set_scope_type('eee.fff.ggg', 'task')
