@@ -216,7 +216,7 @@ class VCDWriter(object):
             elif val_str[0] == 'r':
                 pass  # real variables cannot have 'z' or 'x' state
             else:
-                self._ofile.write('x{ident}\n')
+                self._ofile.write('x{}\n'.format(ident))
         self._ofile.write('$end\n')
 
     def dump_on(self, timestamp):
