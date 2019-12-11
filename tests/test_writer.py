@@ -470,6 +470,8 @@ def test_vcd_dump_off_on(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         v0 = vcd.register_var('scope', 'a', 'integer', 8)
         v1 = vcd.register_var('scope', 'b', 'wire', 1)
+        v2 = vcd.register_var('scope', 'c', 'event')
+        v3 = vcd.register_var('scope', 'd', 'real', init=1.23)
 
         vcd.change(v0, 1, 10)
         vcd.change(v1, 2, True)
@@ -479,6 +481,7 @@ def test_vcd_dump_off_on(capsys):
 
         vcd.change(v0, 6, 11)
         vcd.change(v1, 7, False)
+        vcd.change(v2, 8, True)  # should not show up in next dump
 
         vcd.dump_on(9)
         vcd.dump_off(10)
@@ -486,6 +489,57 @@ def test_vcd_dump_off_on(capsys):
 
         vcd.change(v0, 11, 12)
         vcd.change(v1, 11, True)
+        vcd.change(v3, 11, 3.21)
+
+    expected_lines = [
+        '$date today $end',
+        '$timescale 1 us $end',
+        '$scope module scope $end',
+        '$var integer 8 0 a $end',
+        '$var wire 1 1 b $end',
+        '$var event 1 2 c $end',
+        '$var real 64 3 d $end',
+        '$upscope $end',
+        '$enddefinitions $end',
+        '#0',
+        '$dumpvars',
+        'bx 0',
+        'x1',
+        'r1.23 3',
+        '$end',
+        '#1',
+        'b1010 0',
+        '#2',
+        '11',
+        '#4',
+        '$dumpoff',
+        'bx 0',
+        'x1',
+        '$end',
+        '#9',
+        '$dumpon',
+        'b1011 0',
+        '01',
+        'r1.23 3',
+        '$end',
+        '#10',
+        '$dumpoff',
+        'bx 0',
+        'x1',
+        '$end',
+        '#10',
+        '$dumpon',
+        'b1011 0',
+        '01',
+        'r1.23 3',
+        '$end',
+        '#11',
+        'b1100 0',
+        '11',
+        'r3.21 3',
+    ]
+
+    assert expected_lines == split_lines(capsys)
 
 
 def test_variable():
