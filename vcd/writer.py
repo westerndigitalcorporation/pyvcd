@@ -83,7 +83,7 @@ class VCDWriter(object):
         self._scope_var_strs = {}
         self._scope_var_names = {}
         self._scope_types = {}
-        self._ident_values = OrderedDict()
+        self._var_values = OrderedDict()
         self._timestamp = int(init_timestamp)
 
     def set_scope_type(self, scope, scope_type):
@@ -191,8 +191,7 @@ class VCDWriter(object):
         else:
             var = VectorVariable(ident, var_type, size)
 
-        if var_type != 'event':
-            self.change(var, self._timestamp, init)
+        self.change(var, self._timestamp, init)
 
         # Only alter state after change_func() succeeds
         self._next_var_id += 1
@@ -203,34 +202,36 @@ class VCDWriter(object):
 
     def dump_off(self, timestamp):
         """Suspend dumping to VCD file."""
-        if self._dumping and not self._registering and self._ident_values:
+        if self._dumping and not self._registering and self._var_values:
             self._dump_off(timestamp)
         self._dumping = False
 
     def _dump_off(self, timestamp):
         self._ofile.write('#{}\n'.format(int(timestamp)))
         self._ofile.write('$dumpoff\n')
-        for ident, val_str in six.iteritems(self._ident_values):
-            if val_str[0] == 'b':
-                self._ofile.write('bx {}\n'.format(ident))
-            elif val_str[0] == 'r':
-                pass  # real variables cannot have 'z' or 'x' state
-            else:
-                self._ofile.write('x{}\n'.format(ident))
+        for var in six.iterkeys(self._var_values):
+            if var.type in ['event', 'real', 'string']:
+                # These variable types cannot be the 'x' state
+                continue
+            val_str = var.format_value('x', self._check_values)
+            self._ofile.write(val_str + '\n')
         self._ofile.write('$end\n')
 
     def dump_on(self, timestamp):
         """Resume dumping to VCD file."""
-        if not self._dumping and not self._registering and self._ident_values:
+        if not self._dumping and not self._registering and self._var_values:
             self._ofile.write('#{}\n'.format(int(timestamp)))
             self._dump_values('$dumpon')
         self._dumping = True
 
     def _dump_values(self, keyword):
         self._ofile.write(keyword + '\n')
-        # TODO: events should be excluded
-        self._ofile.write('\n'.join(six.itervalues(self._ident_values)))
-        self._ofile.write('\n$end\n')
+        for var, val in six.iteritems(self._var_values):
+            if var.type == 'event':
+                continue
+            val_str = var.format_value(val, self._check_values)
+            self._ofile.write(val_str + '\n')
+        self._ofile.write('$end\n')
 
     def change(self, var, timestamp, value):
         """Change variable's value in VCD stream.
@@ -278,7 +279,7 @@ class VCDWriter(object):
         if self._dumping and not self._registering:
             self._ofile.write(val_str + '\n')
         else:
-            self._ident_values[var.ident] = val_str
+            self._var_values[var] = value
 
     def _get_scope_tuple(self, scope):
         if isinstance(scope, six.string_types):
@@ -409,7 +410,7 @@ class VCDWriter(object):
     def _finalize_registration(self):
         assert self._registering
         self._ofile.write('\n'.join(self._gen_header()) + '\n')
-        if self._ident_values:
+        if self._var_values:
             self._ofile.write('#{}\n'.format(int(self._timestamp)))
             self._dump_values('$dumpvars')
             if not self._dumping:
