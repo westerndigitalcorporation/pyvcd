@@ -4,5 +4,3 @@ pytest-flake8
 setuptools_scm
 six
 tox
-
-pytictoc
