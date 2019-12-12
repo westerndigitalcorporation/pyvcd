@@ -414,7 +414,6 @@ def test_vcd_dump_off_early(capsys):
         '$dumpvars',
         'b111 0',
         '$end',
-        '#0',
         '$dumpoff',
         'bx 0',
         '$end',
@@ -527,7 +526,6 @@ def test_vcd_dump_off_on(capsys):
         'bx 0',
         'x1',
         '$end',
-        '#10',
         '$dumpon',
         'b1011 0',
         '01',
@@ -537,6 +535,37 @@ def test_vcd_dump_off_on(capsys):
         'b1100 0',
         '11',
         'r3.21 3',
+    ]
+
+    assert expected_lines == split_lines(capsys)
+
+
+def test_vcd_dump_off_time_order(capsys):
+    with VCDWriter(sys.stdout, date='today') as vcd:
+        v0 = vcd.register_var('scope', 'a', 'integer', 8)
+        vcd.dump_off(1)
+
+        with pytest.raises(VCDPhaseError):
+            vcd.dump_off(0)
+
+        assert vcd._var_values[v0] == 'x'
+        vcd.change(v0, 1, 10)
+
+    expected_lines = [
+        '$date today $end',
+        '$timescale 1 us $end',
+        '$scope module scope $end',
+        '$var integer 8 0 a $end',
+        '$upscope $end',
+        '$enddefinitions $end',
+        '#0',
+        '$dumpvars',
+        'bx 0',
+        '$end',
+        '#1',
+        '$dumpoff',
+        'bx 0',
+        '$end',
     ]
 
     assert expected_lines == split_lines(capsys)
