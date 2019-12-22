@@ -150,7 +150,7 @@ class VCDWriter(object):
 
         scope_tuple = self._get_scope_tuple(scope)
 
-        scope_names = self._scope_var_names.setdefault(scope_tuple, [])
+        scope_names = self._scope_var_names.setdefault(scope_tuple, set())
         if name in scope_names:
             raise KeyError('Duplicate var {} in scope {}'.format(name, scope))
 
@@ -198,7 +198,7 @@ class VCDWriter(object):
         # Only alter state after change_func() succeeds
         self._next_var_id += 1
         self._scope_var_strs.setdefault(scope_tuple, []).append(var_str)
-        scope_names.append(name)
+        scope_names.add(name)
 
         return var
 
