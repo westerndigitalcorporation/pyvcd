@@ -122,6 +122,36 @@ def test_vcd_one_var(capsys):
     assert lines[-1] == 'b1010 foo'
 
 
+def test_vcd_no_duplicates(capsys):
+    with VCDWriter(sys.stdout, date='today') as vcd:
+        var = vcd.register_var('sss', 'nnn', 'integer', 32, ident='foo')
+        vcd.change(var, 0, 'x')
+        vcd.change(var, 1, 10)
+        vcd.change(var, 2, 10)
+        vcd.change(var, 3, 10)
+        vcd.change(var, 4, 15)
+        vcd.change(var, 5, 15)
+        vcd.change(var, 6, 10)
+    assert split_lines(capsys) == [
+        '$date today $end',
+        '$timescale 1 us $end',
+        '$scope module sss $end',
+        '$var integer 32 foo nnn $end',
+        '$upscope $end',
+        '$enddefinitions $end',
+        '#0',
+        '$dumpvars',
+        'bx foo',
+        '$end',
+        '#1',
+        'b1010 foo',
+        '#4',
+        'b1111 foo',
+        '#6',
+        'b1010 foo',
+    ]
+
+
 def test_vcd_scopes(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         vcd.set_scope_type('eee.fff.ggg', 'task')
@@ -548,7 +578,7 @@ def test_vcd_dump_off_time_order(capsys):
         with pytest.raises(VCDPhaseError):
             vcd.dump_off(0)
 
-        assert vcd._var_values[v0] == 'x'
+        assert v0.value == 'x'
         vcd.change(v0, 1, 10)
 
     expected_lines = [
@@ -572,7 +602,7 @@ def test_vcd_dump_off_time_order(capsys):
 
 
 def test_variable():
-    var = Variable('ident0', 'integer', 16)
+    var = Variable('ident0', 'integer', 16, 0)
     with pytest.raises(NotImplementedError):
         var.format_value(0)
 
@@ -588,13 +618,13 @@ def test_variable():
     ('b111 v', 7, -1),
 ])
 def test_vector_var_3bit(expected, unsigned, signed):
-    var = VectorVariable('v', 'integer', 3)
+    var = VectorVariable('v', 'integer', 3, unsigned)
     assert expected == var.format_value(unsigned)
     assert expected == var.format_value(signed)
 
 
 def test_vector_var_3bit_invalid():
-    var = VectorVariable('v', 'integer', 3)
+    var = VectorVariable('v', 'integer', 3, 0)
 
     with pytest.raises(ValueError):
         var.format_value(8)
@@ -616,7 +646,7 @@ def test_vector_var_3bit_invalid():
     ((8, 32), (0b1010, 0xff00ff00), 'b101011111111000000001111111100000000 v'),
 ])
 def test_vector_tuple(size, value, expected):
-    var = VectorVariable('v', 'integer', size)
+    var = VectorVariable('v', 'integer', size, value)
     assert expected == var.format_value(value)
 
 

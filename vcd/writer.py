@@ -3,7 +3,6 @@
 This module provides :class:`VCDWriter` for writing VCD files.
 
 """
-from collections import OrderedDict
 from numbers import Number
 import datetime
 
@@ -83,7 +82,7 @@ class VCDWriter(object):
         self._scope_var_strs = {}
         self._scope_var_names = {}
         self._scope_types = {}
-        self._var_values = OrderedDict()
+        self._vars = []
         self._timestamp = int(init_timestamp)
         self._last_dumped_ts = None
 
@@ -184,16 +183,16 @@ class VCDWriter(object):
                 init = 'x'
 
         if var_type == 'string':
-            var = StringVariable(ident, var_type, size)
+            var = StringVariable(ident, var_type, size, init)
         elif size == 1:
-            var = ScalarVariable(ident, var_type, size)
+            var = ScalarVariable(ident, var_type, size, init)
         elif var_type == 'real':
-            var = RealVariable(ident, var_type, size)
+            var = RealVariable(ident, var_type, size, init)
         else:
-            var = VectorVariable(ident, var_type, size)
+            var = VectorVariable(ident, var_type, size, init)
 
         var.format_value(init, check=True)
-        self._var_values[var] = init
+        self._vars.append(var)
 
         # Only alter state after change_func() succeeds
         self._next_var_id += 1
@@ -211,7 +210,7 @@ class VCDWriter(object):
             return
         self._dump_timestamp()
         self._ofile.write('$dumpoff\n')
-        for var in six.iterkeys(self._var_values):
+        for var in self._vars:
             if var.type in ['event', 'real', 'string']:
                 # These variable types cannot be the 'x' state
                 continue
@@ -233,10 +232,10 @@ class VCDWriter(object):
 
     def _dump_values(self, keyword):
         self._ofile.write(keyword + '\n')
-        for var, val in six.iteritems(self._var_values):
+        for var in self._vars:
             if var.type == 'event':
                 continue
-            val_str = var.format_value(val, self._check_values)
+            val_str = var.format_value(var.value, self._check_values)
             self._ofile.write(val_str + '\n')
         self._ofile.write('$end\n')
 
@@ -244,8 +243,6 @@ class VCDWriter(object):
         if timestamp < self._timestamp:
             raise VCDPhaseError('Out of order timestamp: {}'.format(timestamp))
         elif timestamp > self._timestamp:
-            if self._registering:
-                self._finalize_registration()
             self._timestamp = int(timestamp)
 
     def _dump_timestamp(self):
@@ -287,7 +284,10 @@ class VCDWriter(object):
             raise VCDPhaseError('Cannot change value after close()')
 
         # Format value early to catch any errors before writing output.
-        val_str = var.format_value(value, self._check_values)
+        if value != var.value:
+            val_str = var.format_value(value, self._check_values)
+        else:
+            val_str = ''
 
         # Unroll for performance: self._set_timestamp(timestamp)
         if timestamp < self._timestamp:
@@ -297,6 +297,10 @@ class VCDWriter(object):
                 self._finalize_registration()
             self._timestamp = int(timestamp)
 
+        if not val_str:
+            return
+
+        var.value = value
         if self._dumping and not self._registering:
             # Unroll for performance: self._dump_timestamp()
             if self._timestamp != self._last_dumped_ts:
@@ -306,8 +310,6 @@ class VCDWriter(object):
                 )
             else:
                 self._ofile.write(val_str + '\n')
-        else:
-            self._var_values[var] = value
 
     def _get_scope_tuple(self, scope):
         if isinstance(scope, six.string_types):
@@ -439,7 +441,7 @@ class VCDWriter(object):
     def _finalize_registration(self):
         assert self._registering
         self._ofile.write('\n'.join(self._gen_header()) + '\n')
-        if self._var_values:
+        if self._vars:
             self._dump_timestamp()
             self._dump_values('$dumpvars')
         self._registering = False
@@ -453,15 +455,17 @@ class VCDWriter(object):
 class Variable(object):
     """VCD variable details needed to call :meth:`VCDWriter.change()`."""
 
-    __slots__ = ('ident', 'type', 'size')
+    __slots__ = ('ident', 'type', 'size', 'value')
 
-    def __init__(self, ident, type, size):
+    def __init__(self, ident, type, size, init):
         #: Identifier used in VCD output stream.
         self.ident = ident
         #: VCD variable type; one of :const:`VCDWriter.VAR_TYPES`.
         self.type = type
         #: Size, in bits, of variable.
         self.size = size
+        #: Last value of variable.
+        self.value = init
 
     def format_value(self, value, check=True):
         """Format value change for use in VCD stream."""
