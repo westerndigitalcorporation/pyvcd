@@ -317,6 +317,14 @@ def test_vcd_register_event(capsys):
     assert 'z0' not in out
 
 
+def test_vcd_bad_event():
+    with VCDWriter(sys.stdout, date='') as vcd:
+        var = vcd.register_var('scope', 'a', 'event')
+        vcd.change(var, 1, True)
+        with pytest.raises(ValueError):
+            vcd.change(var, 2, False)
+
+
 def test_vcd_scalar_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         v0 = vcd.register_var('aaa', 'nn0', 'integer', 1)

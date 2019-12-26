@@ -184,6 +184,8 @@ class VCDWriter(object):
 
         if var_type == 'string':
             var = StringVariable(ident, var_type, size, init)
+        elif var_type == 'event':
+            var = EventVariable(ident, var_type, size, init)
         elif size == 1:
             var = ScalarVariable(ident, var_type, size, init)
         elif var_type == 'real':
@@ -211,11 +213,9 @@ class VCDWriter(object):
         self._dump_timestamp()
         self._ofile.write('$dumpoff\n')
         for var in self._vars:
-            if var.type in ['event', 'real', 'string']:
-                # These variable types cannot be the 'x' state
-                continue
-            val_str = var.format_value('x', self._check_values)
-            self._ofile.write(val_str + '\n')
+            val_str = var.dump_off()
+            if val_str:
+                self._ofile.write(val_str + '\n')
         self._ofile.write('$end\n')
         self._dumping = False
 
@@ -233,10 +233,9 @@ class VCDWriter(object):
     def _dump_values(self, keyword):
         self._ofile.write(keyword + '\n')
         for var in self._vars:
-            if var.type == 'event':
-                continue
-            val_str = var.format_value(var.value, self._check_values)
-            self._ofile.write(val_str + '\n')
+            val_str = var.dump(self._check_values)
+            if val_str:
+                self._ofile.write(val_str + '\n')
         self._ofile.write('$end\n')
 
     def _set_timestamp(self, timestamp):
@@ -471,6 +470,12 @@ class Variable(object):
         """Format value change for use in VCD stream."""
         raise NotImplementedError
 
+    def dump(self, check=True):
+        return self.format_value(self.value, check)
+
+    def dump_off(self):
+        return None
+
 
 class ScalarVariable(Variable):
     """One-bit VCD scalar.
@@ -500,6 +505,21 @@ class ScalarVariable(Variable):
             return '1' + self.ident
         else:
             return '0' + self.ident
+
+    def dump_off(self):
+        return 'x' + self.ident
+
+
+class EventVariable(Variable):
+
+    def format_value(self, value, check=True):
+        if value:
+            return '1' + self.ident
+        else:
+            raise ValueError('invalid event value')
+
+    def dump(self, check=True):
+        return None
 
 
 class StringVariable(Variable):
@@ -626,3 +646,6 @@ class VectorVariable(Variable):
                           any(c not in '01xzXZ-' for c in value)):
                 raise ValueError('Invalid vector value ({})'.format(value))
             return value
+
+    def dump_off(self):
+        return self.format_value('x', check=False)
