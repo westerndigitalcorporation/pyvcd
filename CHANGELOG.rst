@@ -1,6 +1,14 @@
 Changelog
 =========
 
+pyvcd-0.1.6 (2019-12-26)
+------------------------
+* Repair mis-formatted variable identifiers in dumps
+* Exclude event and string types from dump_off
+* Avoid duplicate timestamps in VCD output
+* Avoid duplicate values in VCD output
+* Improve performance when registering many variables in a scope (#12)
+
 pyvcd-0.1.5 (2019-12-04)
 ------------------------
 * Improve runtime performance by using write() (#9)
