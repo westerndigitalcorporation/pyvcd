@@ -283,7 +283,7 @@ class VCDWriter(object):
             raise VCDPhaseError('Cannot change value after close()')
 
         # Format value early to catch any errors before writing output.
-        if value != var.value:
+        if value != var.value or var.type == 'event':
             val_str = var.format_value(value, self._check_values)
         else:
             val_str = ''

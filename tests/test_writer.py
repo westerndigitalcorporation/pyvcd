@@ -325,6 +325,36 @@ def test_vcd_bad_event():
             vcd.change(var, 2, False)
 
 
+def test_vcd_multiple_events(capsys):
+    with VCDWriter(sys.stdout, date='') as vcd:
+        var = vcd.register_var('scope', 'a', 'event')
+        vcd.change(var, 1, True)
+        vcd.change(var, 2, True)
+        vcd.change(var, 2, True)
+        vcd.change(var, 2, True)
+        vcd.change(var, 3, True)
+
+    expected_lines = [
+        '$timescale 1 us $end',
+        '$scope module scope $end',
+        '$var event 1 0 a $end',
+        '$upscope $end',
+        '$enddefinitions $end',
+        '#0',
+        '$dumpvars',
+        '$end',
+        '#1',
+        '10',
+        '#2',
+        '10',
+        '10',
+        '10',
+        '#3',
+        '10',
+    ]
+
+    assert expected_lines == split_lines(capsys)
+
 def test_vcd_scalar_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         v0 = vcd.register_var('aaa', 'nn0', 'integer', 1)
