@@ -1,6 +1,10 @@
 Changelog
 =========
 
+pyvcd-0.1.7 (2020-01-24)
+------------------------
+* Repair event variable changes (#14)
+
 pyvcd-0.1.6 (2019-12-26)
 ------------------------
 * Repair mis-formatted variable identifiers in dumps
