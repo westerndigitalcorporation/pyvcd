@@ -3,16 +3,10 @@
 This module provides :class:`VCDWriter` for writing VCD files.
 
 """
+from collections.abc import Sequence
+from itertools import zip_longest
 from numbers import Number
 import datetime
-
-from six.moves import zip, zip_longest
-import six
-
-try:
-    from collections.abc import Sequence
-except ImportError:
-    from collections import Sequence
 
 
 class VCDPhaseError(Exception):
@@ -24,7 +18,7 @@ class VCDPhaseError(Exception):
     """
 
 
-class VCDWriter(object):
+class VCDWriter:
     """Value Change Dump writer.
 
     A VCD file captures time-ordered changes to the value of variables.
@@ -311,7 +305,7 @@ class VCDWriter(object):
                 self._ofile.write(val_str + '\n')
 
     def _get_scope_tuple(self, scope):
-        if isinstance(scope, six.string_types):
+        if isinstance(scope, str):
             return tuple(scope.split(self._scope_sep))
         if isinstance(scope, (list, tuple)):
             return tuple(scope)
@@ -331,7 +325,7 @@ class VCDWriter(object):
                 num_str = str(num)
             else:
                 raise ValueError('Invalid timescale {}'.format(timescale))
-        elif isinstance(timescale, six.string_types):
+        elif isinstance(timescale, str):
             if timescale in cls.TIMESCALE_UNITS:
                 num_str = '1'
                 unit = timescale
@@ -398,7 +392,7 @@ class VCDWriter(object):
         self._ofile.flush()
 
     def _gen_header(self):
-        for kwname, kwvalue in sorted(six.iteritems(self._header_keywords)):
+        for kwname, kwvalue in sorted(self._header_keywords.items()):
             if not kwvalue:
                 continue
             lines = kwvalue.split('\n')
@@ -451,7 +445,7 @@ class VCDWriter(object):
         self._scope_var_names.clear()
 
 
-class Variable(object):
+class Variable:
     """VCD variable details needed to call :meth:`VCDWriter.change()`."""
 
     __slots__ = ('ident', 'type', 'size', 'value')
@@ -495,7 +489,7 @@ class ScalarVariable(Variable):
         :returns: string representing value change for use in a VCD stream.
 
         """
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             if check and (len(value) != 1 or value not in '01xzXZ'):
                 raise ValueError('Invalid scalar value ({})'.format(value))
             return value + self.ident
@@ -543,7 +537,7 @@ class StringVariable(Variable):
         """
         if value is None:
             value = ''
-        if check and (not isinstance(value, six.string_types) or ' ' in value):
+        if check and (not isinstance(value, str) or ' ' in value):
             raise ValueError('Invalid string value ({})'.format(value))
 
         return 's{} {}'.format(value, self.ident)
@@ -630,7 +624,7 @@ class VectorVariable(Variable):
         return 'b{} {}'.format(value_str, self.ident)
 
     def _format_value(self, value, size, check):
-        if isinstance(value, six.integer_types):
+        if isinstance(value, int):
             max_val = 1 << size
             if check and (-value > (max_val >> 1) or value >= max_val):
                 raise ValueError('Value ({}) not representable in {} bits'
@@ -641,7 +635,7 @@ class VectorVariable(Variable):
         elif value is None:
             return 'z'
         else:
-            if check and (not isinstance(value, six.string_types) or
+            if check and (not isinstance(value, str) or
                           len(value) > size or
                           any(c not in '01xzXZ-' for c in value)):
                 raise ValueError('Invalid vector value ({})'.format(value))

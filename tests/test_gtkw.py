@@ -1,12 +1,11 @@
 """Tests for vcd.gtkw module."""
 
-from __future__ import print_function
+from io import StringIO
 import datetime
 import os
 import time
 
 import pytest
-import six
 
 from vcd.gtkw import GTKWSave, decode_flags, make_translation_filter
 
@@ -85,7 +84,7 @@ def test_gtkw_savefile_noname(gtkw):
 
 
 def test_gtkw_savefile_none():
-    sio = six.StringIO()
+    sio = StringIO()
     sio.name = '/some/path'
     gtkw = GTKWSave(sio)
     gtkw.savefile()

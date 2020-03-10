@@ -1,6 +1,5 @@
 '''Tests for VCDWriter.'''
 
-from __future__ import print_function
 import sys
 import os
 import timeit

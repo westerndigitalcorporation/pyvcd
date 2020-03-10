@@ -11,19 +11,16 @@ variable aliases, color information, and more.
 __ http://gtkwave.sourceforge.net
 
 """
-from __future__ import print_function, division
 from contextlib import contextmanager
+from functools import reduce
 import datetime
 import math
 import operator
 import os
 import time
 
-import six
-from six.moves import reduce
 
-
-class GTKWSave(object):
+class GTKWSave:
     """Write GTKWave save files.
 
     This class provides methods for writing the various pieces of a GTKWave
@@ -62,7 +59,7 @@ class GTKWSave(object):
 
     def _set_color(self, color):
         if color is not None:
-            if isinstance(color, six.string_types):
+            if isinstance(color, str):
                 color = color_map[color]
             if color == -1:
                 self._color_stack[-1] = (self._color_stack[-1] + 1) % 8
@@ -442,9 +439,9 @@ def make_translation_filter(translations, datafmt='hex', size=None):
         for translation in translations:
             value = translation[0]
             rest = list(translation[1:])
-            if isinstance(value, six.integer_types):
-                value = str(six.int2byte(value).decode('ascii'))
-            elif not isinstance(value, six.string_types):
+            if isinstance(value, int):
+                value = bytes((value, )).decode('ascii')
+            elif not isinstance(value, str):
                 raise TypeError("Invalid type ({}) for ascii translation"
                                 .format(type(value)))
             elif len(value) != 1:
@@ -545,7 +542,7 @@ def decode_flags(flags):
     :returns: List of flag names
 
     """
-    if isinstance(flags, six.string_types):
+    if isinstance(flags, str):
         flags = int(flags.lstrip('@'), 16)
     return [name for i, name in enumerate(flag_names) if (1 << i) & flags]
 

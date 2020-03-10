@@ -2,5 +2,4 @@ pytest
 pytest-cov
 pytest-flake8
 setuptools_scm
-six
 tox
