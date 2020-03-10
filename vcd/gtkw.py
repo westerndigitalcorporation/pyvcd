@@ -13,6 +13,7 @@ __ http://gtkwave.sourceforge.net
 """
 from contextlib import contextmanager
 from functools import reduce
+from typing import IO, Any, Dict, Generator, List, Optional, Sequence, Tuple, Union
 import datetime
 import math
 import operator
@@ -41,23 +42,23 @@ class GTKWSave:
 
     """
 
-    def __init__(self, savefile):
+    def __init__(self, savefile: IO):
         self.file = savefile
         self.path = getattr(savefile, 'name', None)
         self._flags = 0
         self._color_stack = [0]
-        self._filter_files = []
-        self._filter_procs = []
+        self._filter_files: List[str] = []
+        self._filter_procs: List[str] = []
 
-    def _p(self, *args, **kwargs):
+    def _p(self, *args, **kwargs) -> None:
         print(*args, file=self.file, **kwargs)
 
-    def _set_flags(self, flags):
+    def _set_flags(self, flags: int) -> None:
         if flags != self._flags:
             self._p('@{:x}'.format(flags))
             self._flags = flags
 
-    def _set_color(self, color):
+    def _set_color(self, color: Optional[Union[str, int]]) -> None:
         if color is not None:
             if isinstance(color, str):
                 color = color_map[color]
@@ -67,7 +68,7 @@ class GTKWSave:
                 self._color_stack[-1] = color
             self._p('[color] {}'.format(self._color_stack[-1]))
 
-    def _set_translate_filter_file(self, filter_path):
+    def _set_translate_filter_file(self, filter_path: Optional[str]) -> None:
         if filter_path:
             try:
                 filter_id = 1 + self._filter_files.index(filter_path)
@@ -76,7 +77,7 @@ class GTKWSave:
                 filter_id = len(self._filter_files)
             self._p('^{} {}'.format(filter_id, filter_path))
 
-    def _set_translate_filter_proc(self, proc_path):
+    def _set_translate_filter_proc(self, proc_path: Optional[str]) -> None:
         if proc_path:
             try:
                 filter_id = 1 + self._filter_procs.index(proc_path)
@@ -85,12 +86,12 @@ class GTKWSave:
                 filter_id = len(self._filter_procs)
             self._p('^>{} {}'.format(filter_id, proc_path))
 
-    def comment(self, *comments):
+    def comment(self, *comments: Sequence[str]) -> None:
         """Add comment line(s) to save file."""
         for comment in comments:
             self._p('[*]', comment)
 
-    def dumpfile(self, dump_path, abspath=True):
+    def dumpfile(self, dump_path: str, abspath: bool = True) -> None:
         """Add VCD dump file path to save file.
 
         The `[dumpfile]` must be in the save file in order to only have to specify the
@@ -115,7 +116,11 @@ class GTKWSave:
                 dump_path = os.path.abspath(dump_path)
             self._p('[dumpfile] "{}"'.format(dump_path))
 
-    def dumpfile_mtime(self, mtime=None, dump_path=None):
+    def dumpfile_mtime(
+        self,
+        mtime: Optional[Union[float, time.struct_time, datetime.datetime]] = None,
+        dump_path: Optional[str] = None,
+    ) -> None:
         """Add dump file modification time to save file.
 
         Configuring the dump file's modification time is optional.
@@ -123,6 +128,7 @@ class GTKWSave:
         """
         time_format = '%a %b %d %H:%M:%S %Y'
         if mtime is None:
+            assert isinstance(dump_path, str)
             mtime = os.stat(dump_path).st_mtime
         if isinstance(mtime, float):
             mtime = time.gmtime(mtime)
@@ -134,17 +140,20 @@ class GTKWSave:
             raise TypeError('Invalid mtime type ({})'.format(type(mtime)))
         self._p('[dumpfile_mtime] "{}"'.format(mtime_str))
 
-    def dumpfile_size(self, size=None, dump_path=None):
+    def dumpfile_size(
+        self, size: Optional[int] = None, dump_path: Optional[str] = None
+    ) -> None:
         """Add dump file size annotation to save file.
 
         Configuring the dump file's size is optional.
 
         """
         if size is None:
+            assert isinstance(dump_path, str)
             size = os.stat(dump_path).st_size
         self._p('[dumpfile_size] {}'.format(size))
 
-    def savefile(self, save_path=None, abspath=True):
+    def savefile(self, save_path: Optional[str] = None, abspath: bool = True) -> None:
         """Add the path of the save file to the save file.
 
         With no parameters, the output file's name will be used.
@@ -164,26 +173,28 @@ class GTKWSave:
                 save_path = os.path.abspath(save_path)
             self._p('[savefile] "{}"'.format(save_path))
 
-    def timestart(self, timestamp=0):
+    def timestart(self, timestamp: int = 0) -> None:
         """Add simulation start time to the save file."""
         self._p('[timestart] {}'.format(timestamp))
 
-    def zoom_markers(self, zoom=0.0, marker=-1, **kwargs):
+    def zoom_markers(
+        self, zoom: float = 0.0, marker: int = -1, **kwargs: Dict[str, int]
+    ) -> None:
         """Set zoom, primary marker, and markers 'a' - 'z'."""
         self._p(
             '*{:.6f} {}'.format(zoom, marker),
             *[kwargs.get(k, -1) for k in 'abcdefghijklmnopqrstuvwxyz'],
         )
 
-    def size(self, width, height):
+    def size(self, width: int, height: int) -> None:
         """Set GTKWave window size."""
         self._p('[size] {} {}'.format(width, height))
 
-    def pos(self, x=-1, y=-1):
+    def pos(self, x: int = -1, y: int = -1) -> None:
         """Set GTKWave window position."""
         self._p('[pos] {} {}'.format(x, y))
 
-    def treeopen(self, tree):
+    def treeopen(self, tree: str) -> None:
         """Start with *tree* open in Signal Search Tree (SST).
 
         GTKWave specifies tree paths with a trailing '.'. The trailing '.' will
@@ -197,20 +208,22 @@ class GTKWSave:
         else:
             self._p('[treeopen] {}.'.format(tree))
 
-    def signals_width(self, width):
+    def signals_width(self, width: int) -> None:
         """Set width of Signals frame."""
         self._p('[signals_width] {}'.format(width))
 
-    def sst_expanded(self, is_expanded):
+    def sst_expanded(self, is_expanded: bool) -> None:
         """Set whether Signal Search Tree (SST) frame is expanded."""
         self._p('[sst_expanded] {}'.format(int(bool(is_expanded))))
 
-    def pattern_trace(self, is_enabled):
+    def pattern_trace(self, is_enabled: bool) -> None:
         """Enable/disable pattern trace."""
         self._p('[pattern_trace] {}'.format(int(bool(is_enabled))))
 
     @contextmanager
-    def group(self, name, closed=False, highlight=False):
+    def group(
+        self, name: str, closed: bool = False, highlight: bool = False
+    ) -> Generator[None, None, None]:
         """Contextmanager helper for :meth:`begin_group` and :meth:`end_group`.
 
         This context manager starts a new group of signal traces and ends the group when
@@ -232,7 +245,9 @@ class GTKWSave:
         finally:
             self.end_group(name, closed, highlight)
 
-    def begin_group(self, name, closed=False, highlight=False):
+    def begin_group(
+        self, name: str, closed: bool = False, highlight: bool = False
+    ) -> None:
         """Begin a new signal trace group.
 
         Consider using :meth:`group()` instead of :meth:`begin_group()` and
@@ -252,7 +267,9 @@ class GTKWSave:
         self._p('-{}'.format(name))
         self._color_stack.append(0)
 
-    def end_group(self, name, closed=False, highlight=False):
+    def end_group(
+        self, name: str, closed: bool = False, highlight: bool = False
+    ) -> None:
         """End a signal trace group.
 
         This call must match with a prior call to :meth:`begin_group(). Consider using
@@ -272,7 +289,9 @@ class GTKWSave:
         self._p('-{}'.format(name))
         self._color_stack.pop(-1)
 
-    def blank(self, label='', analog_extend=False, highlight=False):
+    def blank(
+        self, label: str = '', analog_extend: bool = False, highlight: bool = False
+    ) -> None:
         """Add blank or label to trace signals list.
 
         :param str label: Optional label for the blank.
@@ -291,16 +310,16 @@ class GTKWSave:
 
     def trace(
         self,
-        name,
-        alias=None,
-        color=None,
-        datafmt='hex',
-        highlight=False,
-        rjustify=True,
-        extraflags=None,
-        translate_filter_file=None,
-        translate_filter_proc=None,
-    ):
+        name: str,
+        alias: Optional[str] = None,
+        color: Optional[Union[str, int]] = None,
+        datafmt: str = 'hex',
+        highlight: bool = False,
+        rjustify: bool = True,
+        extraflags: Optional[Sequence[str]] = None,
+        translate_filter_file: Optional[str] = None,
+        translate_filter_proc: Optional[str] = None,
+    ) -> None:
         """Add signal trace to save file.
 
         :param str name: fully-qualified name of signal to trace.
@@ -347,16 +366,16 @@ class GTKWSave:
     @contextmanager
     def trace_bits(
         self,
-        name,
-        alias=None,
-        color=None,
-        datafmt='hex',
-        highlight=False,
-        rjustify=True,
-        extraflags=None,
-        translate_filter_file=None,
-        translate_filter_proc=None,
-    ):
+        name: str,
+        alias: Optional[str] = None,
+        color: Optional[Union[str, int]] = None,
+        datafmt: str = 'hex',
+        highlight: bool = False,
+        rjustify: bool = True,
+        extraflags: Optional[Sequence[str]] = None,
+        translate_filter_file: Optional[str] = None,
+        translate_filter_proc: Optional[str] = None,
+    ) -> Generator[None, None, None]:
         """Contextmanager for tracing bits of a vector signal.
 
         This allows each individual bit of a vector signal to have its own trace (and
@@ -408,7 +427,13 @@ class GTKWSave:
             self._set_flags(encode_flags(flags))
             self._p('-group_end')
 
-    def trace_bit(self, index, name, alias=None, color=None):
+    def trace_bit(
+        self,
+        index: int,
+        name: str,
+        alias: Optional[str] = None,
+        color: Optional[Union[str, int]] = None,
+    ) -> None:
         """Trace individual bit of vector signal.
 
         This is meant for use in conjunction with :meth:`trace_bits()`.
@@ -425,7 +450,16 @@ class GTKWSave:
         self._p('({}){}'.format(index, name))
 
 
-def make_translation_filter(translations, datafmt='hex', size=None):
+TranslationType = Union[
+    Tuple[Union[int, str], str], Tuple[Union[int, str], str, Union[str, int]]
+]
+
+
+def make_translation_filter(
+    translations: Sequence[Tuple[Any, ...]],
+    datafmt: str = 'hex',
+    size: Optional[int] = None,
+) -> str:
     """Create translation filter.
 
     The returned translation filter string that can be written to a translation filter
@@ -445,18 +479,21 @@ def make_translation_filter(translations, datafmt='hex', size=None):
               file.
 
     """
-    if datafmt == 'hex':
+    if datafmt == "hex":
+        assert isinstance(size, int)
         value_format = '0{}x'.format(int(math.ceil(size / 4)))
     elif datafmt == 'oct':
+        assert isinstance(size, int)
         value_format = '0{}o'.format(int(math.ceil(size / 3)))
     elif datafmt in ['dec', 'signed']:
         value_format = 'd'
     elif datafmt == 'bin':
+        assert isinstance(size, int)
         value_format = '0{}b'.format(size)
     elif datafmt == 'real':
         value_format = '.16g'
     elif datafmt == 'ascii':
-        value_format = ''
+        value_format = ""
         ascii_translations = []
         for translation in translations:
             value = translation[0]
@@ -484,6 +521,7 @@ def make_translation_filter(translations, datafmt='hex', size=None):
             value, label, color = translation
 
         if datafmt in ['hex', 'oct', 'bin']:
+            assert isinstance(size, int)
             max_val = 1 << size
             if -value > (max_val >> 1) or value >= max_val:
                 raise ValueError(
@@ -555,7 +593,7 @@ flag_names = [
 flag_masks = {name: (1 << i) for i, name in enumerate(flag_names)}
 
 
-def decode_flags(flags):
+def decode_flags(flags: Union[str, int]) -> List[str]:
     """Decode hexadecimal flags from GTKWave save file into flag names.
 
     This is useful for understanding what, for example "@802022" means when inspecting a
@@ -571,7 +609,7 @@ def decode_flags(flags):
     return [name for i, name in enumerate(flag_names) if (1 << i) & flags]
 
 
-def encode_flags(names):
+def encode_flags(names: Sequence[str]) -> int:
     """Encode flag names into integer representation.
 
     The this is the bitwise-or of each of the flag's mask values.
@@ -583,7 +621,9 @@ def encode_flags(names):
     return reduce(operator.ior, (flag_masks[name] for name in names), 0)
 
 
-def spawn_gtkwave_interactive(dump_path, save_path, quiet=False):  # pragma: no cover
+def spawn_gtkwave_interactive(
+    dump_path: str, save_path: str, quiet: bool = False
+) -> None:  # pragma: no cover
     """Spawn gtkwave process in interactive mode.
 
     A process pipeline is constructed such that the contents of the VCD dump file at

@@ -1,7 +1,7 @@
 PYTHON ?= python
 
 .PHONY: lint
-lint: lint-black lint-isort lint-flake8
+lint: lint-black lint-isort lint-flake8 lint-mypy
 
 .PHONY: lint-black
 lint-black:
@@ -14,6 +14,10 @@ lint-isort:
 .PHONY: lint-flake8
 lint-flake8:
 	flake8 .
+
+.PHONY: lint-mypy
+lint-mypy:
+	mypy vcd
 
 .PHONY: format
 format: format-black format-isort

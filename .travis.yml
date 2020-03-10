@@ -25,7 +25,7 @@ jobs:
 install:
   - |
     if [ "$MAKE_TARGET" = "lint" ]; then
-      pip install black
+      pip install black mypy
     fi
   - |
     if [ "$MAKE_TARGET" = "coverage" ]; then

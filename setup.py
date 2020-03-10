@@ -15,7 +15,9 @@ setup(
     setup_requires=['setuptools_scm'],
     use_scm_version=True,
     packages=['vcd'],
+    package_data={'vcd': ['py.typed']},
     include_package_data=True,
+    zip_safe=False,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',

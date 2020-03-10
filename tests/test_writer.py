@@ -27,13 +27,7 @@ def test_vcd_init(capsys):
 
 @pytest.mark.parametrize(
     'timescale, expected',
-    [
-        ('1 us', '1 us'),
-        ('us', '1 us'),
-        ((1, 'ns'), '1 ns'),
-        (('fs',), '1 fs'),
-        ('100ps', '100 ps'),
-    ],
+    [('1 us', '1 us'), ('us', '1 us'), ((1, 'ns'), '1 ns'), ('100ps', '100 ps')],
 )
 def test_vcd_timescales(capsys, timescale, expected):
     with VCDWriter(sys.stdout, date='', timescale=timescale):
