@@ -20,11 +20,11 @@ format: format-black format-isort
 
 .PHONY: format-black
 format-black:
-	black --quiet --diff .
+	black --quiet .
 
 .PHONY: format-isort
 format-isort:
-	isort --quiet --diff --recursive .
+	isort --quiet --recursive .
 
 .PHONY: test
 test:
