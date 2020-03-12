@@ -24,6 +24,10 @@ jobs:
 
 install:
   - |
+    if [ "$MAKE_TARGET" = "lint" ]; then
+      pip install black
+    fi
+  - |
     if [ "$MAKE_TARGET" = "coverage" ]; then
       pip install coveralls
     fi

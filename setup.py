@@ -7,8 +7,8 @@ setup(
     author_email='pete@jpgrayson.net',
     description='Python VCD file support.',
     long_description='\n\n'.join(
-        open(f, 'rb').read().decode('utf-8')
-        for f in ['README.rst', 'LICENSE.txt']),
+        open(f, 'rb').read().decode('utf-8') for f in ['README.rst', 'LICENSE.txt']
+    ),
     url='http://pyvcd.readthedocs.io/en/latest/',
     download_url='https://github.com/SanDisk-Open-Source/pyvcd',
     license='MIT',
@@ -33,7 +33,6 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Scientific/Engineering',
-        'Topic :: Scientific/Engineering :: Electronic Design Automation '
-        '(EDA)',
+        'Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)',
     ],
 )

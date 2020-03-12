@@ -12,8 +12,8 @@ import datetime
 class VCDPhaseError(Exception):
     """Indicating a :class:`VCDWriter` method was called in the wrong phase.
 
-    For example, calling :meth:`register_var()` after :meth:`close()` will
-    raise this exception.
+    For example, calling :meth:`register_var()` after :meth:`close()` will raise this
+    exception.
 
     """
 
@@ -25,14 +25,14 @@ class VCDWriter:
 
     :param file file: A file-like object to write the VCD data.
     :param timescale:
-        Scale of the VCD timestamps. The timescale may either be a string or a
-        tuple containing an (int, str) pair.
+        Scale of the VCD timestamps. The timescale may either be a string or a tuple
+        containing an (int, str) pair.
     :type timescale: str, tuple
     :param str date: Optional `$date` string used in the VCD header.
     :param str comment: Optional `$comment` string used in the VCD header.
     :param str version: Optional `$version` string used in the VCD header.
-    :param str default_scope_type: Scope type for scopes where
-            :meth:`set_scope_type()` is not called explicitly.
+    :param str default_scope_type: Scope type for scopes where :meth:`set_scope_type()`
+            is not called explicitly.
     :param str scope_sep: Separator for scopes specified as strings.
     :param int init_timestamp: The initial timestamp. default=0
     :raises ValueError: for invalid timescale values
@@ -43,9 +43,27 @@ class VCDWriter:
     SCOPE_TYPES = ['begin', 'fork', 'function', 'module', 'task']
 
     #: Valid VCD variable types.
-    VAR_TYPES = ['event', 'integer', 'parameter', 'real', 'realtime', 'reg',
-                 'supply0', 'supply1', 'time', 'tri', 'triand', 'trior',
-                 'trireg', 'tri0', 'tri1', 'wand', 'wire', 'wor', 'string']
+    VAR_TYPES = [
+        'event',
+        'integer',
+        'parameter',
+        'real',
+        'realtime',
+        'reg',
+        'supply0',
+        'supply1',
+        'time',
+        'tri',
+        'triand',
+        'trior',
+        'trireg',
+        'tri0',
+        'tri1',
+        'wand',
+        'wire',
+        'wor',
+        'string',
+    ]
 
     #: Valid timescale numbers.
     TIMESCALE_NUMS = [1, 10, 100]
@@ -53,9 +71,18 @@ class VCDWriter:
     #: Valid timescale units.
     TIMESCALE_UNITS = ['s', 'ms', 'us', 'ns', 'ps', 'fs']
 
-    def __init__(self, file, timescale='1 us', date=None, comment='',
-                 version='', default_scope_type='module', scope_sep='.',
-                 check_values=True, init_timestamp=0):
+    def __init__(
+        self,
+        file,
+        timescale='1 us',
+        date=None,
+        comment='',
+        version='',
+        default_scope_type='module',
+        scope_sep='.',
+        check_values=True,
+        init_timestamp=0,
+    ):
         self._ofile = file
         self._header_keywords = {
             '$timescale': self._check_timescale(timescale),
@@ -64,8 +91,9 @@ class VCDWriter:
             '$version': version,
         }
         if default_scope_type not in self.SCOPE_TYPES:
-            raise ValueError('Invalid default scope type ({})'.format(
-                default_scope_type))
+            raise ValueError(
+                'Invalid default scope type ({})'.format(default_scope_type)
+            )
         self._default_scope_type = default_scope_type
         self._scope_sep = scope_sep
         self._check_values = check_values
@@ -83,8 +111,8 @@ class VCDWriter:
     def set_scope_type(self, scope, scope_type):
         """Set the scope_type for a given scope.
 
-        The scope's type may be set to one of the valid :const:`SCOPE_TYPES`.
-        VCD viewer applications may display different scope types differently.
+        The scope's type may be set to one of the valid :const:`SCOPE_TYPES`. VCD viewer
+        applications may display different scope types differently.
 
         :param scope: The scope to set the type of.
         :type scope: str or sequence of str
@@ -97,32 +125,30 @@ class VCDWriter:
         scope_tuple = self._get_scope_tuple(scope)
         self._scope_types[scope_tuple] = scope_type
 
-    def register_var(self, scope, name, var_type, size=None, init=None,
-                     ident=None):
+    def register_var(self, scope, name, var_type, size=None, init=None, ident=None):
         """Register a VCD variable and return function to change value.
 
         All VCD variables must be registered prior to any value changes.
 
         .. Note::
 
-            The variable `name` differs from the variable's `ident`
-            (identifier). The `name` (also known as `ref`) is meant to refer to
-            the variable name in the code being traced and is visible in VCD
-            viewer applications.  The `ident`, however, is only used within the
-            VCD file and can be auto-generated (by specifying ``ident=None``)
-            for most applications.
+            The variable `name` differs from the variable's `ident` (identifier). The
+            `name` (also known as `ref`) is meant to refer to the variable name in the
+            code being traced and is visible in VCD viewer applications. The `ident`,
+            however, is only used within the VCD file and can be auto-generated (by
+            specifying ``ident=None``) for most applications.
 
         :param scope: The hierarchical scope that the variable belongs within.
         :type scope: str or sequence of str
         :param str name: Name of the variable.
         :param str var_type: One of :const:`VAR_TYPES`.
         :param size:
-            Size, in bits, of the variable. The *size* may be expressed as an
-            int or, for vector variable types, a tuple of int. When the size is
-            expressed as a tuple, the *value* passed to :meth:`change()` must
-            also be a tuple of same arity as the *size* tuple. Some variable
-            types ('integer', 'real', 'realtime', and 'event') have a default
-            size and thus *size* may be ``None`` for those variable types.
+            Size, in bits, of the variable. The *size* may be expressed as an int or,
+            for vector variable types, a tuple of int. When the size is expressed as a
+            tuple, the *value* passed to :meth:`change()` must also be a tuple of same
+            arity as the *size* tuple. Some variable types ('integer', 'real',
+            'realtime', and 'event') have a default size and thus *size* may be ``None``
+            for those variable types.
         :type size: int or tuple(int) or None
         :param init: Optional initial value; defaults to 'x'.
         :param str ident: Optional identifier for use in the VCD stream.
@@ -130,8 +156,7 @@ class VCDWriter:
         :raises ValueError: for invalid var_type value
         :raises TypeError: for invalid parameter types
         :raises KeyError: for duplicate var name
-        :returns: :class:`Variable` instance appropriate for use with
-                  :meth:`change()`.
+        :returns: :class:`Variable` instance appropriate for use with :meth:`change()`.
 
         """
         if self._closed:
@@ -156,8 +181,7 @@ class VCDWriter:
             elif var_type in ['event', 'string']:
                 size = 1
             else:
-                raise ValueError(
-                    'Must supply size for {} var_type'.format(var_type))
+                raise ValueError('Must supply size for {} var_type'.format(var_type))
 
         if isinstance(size, Sequence):
             size = tuple(size)
@@ -166,7 +190,8 @@ class VCDWriter:
             var_size = size
 
         var_str = '$var {var_type} {size} {ident} {name} $end'.format(
-            var_type=var_type, size=var_size, ident=ident, name=name)
+            var_type=var_type, size=var_size, ident=ident, name=name
+        )
 
         if init is None:
             if var_type == 'real':
@@ -248,25 +273,25 @@ class VCDWriter:
     def change(self, var, timestamp, value):
         """Change variable's value in VCD stream.
 
-        This is the fundamental behavior of a :class:`VCDWriter` instance. Each
-        time a variable's value changes, this method should be called.
+        This is the fundamental behavior of a :class:`VCDWriter` instance. Each time a
+        variable's value changes, this method should be called.
 
-        The *timestamp* must be in-order relative to timestamps from previous
-        calls to :meth:`change()`. It is okay to call :meth:`change()` multiple
-        times with the same *timestamp*, but never with a past *timestamp*.
+        The *timestamp* must be in-order relative to timestamps from previous calls to
+        :meth:`change()`. It is okay to call :meth:`change()` multiple times with the
+        same *timestamp*, but never with a past *timestamp*.
 
         .. Note::
 
             :meth:`change()` may be called multiple times before the timestamp
-            progresses past 0. The last value change for each variable will go
-            into the $dumpvars section.
+            progresses past 0. The last value change for each variable will go into the
+            $dumpvars section.
 
         :param Variable var: :class:`Variable` instance (i.e. from
                              :meth:`register_var()`).
         :param int timestamp: Current simulation time.
         :param value:
-            New value for *var*. For :class:`VectorVariable`, if the variable's
-            *size* is a tuple, then *value* must be a tuple of the same arity.
+            New value for *var*. For :class:`VectorVariable`, if the variable's *size*
+            is a tuple, then *value* must be a tuple of the same arity.
 
         :raises ValueError: if the value is not valid for *var*.
         :raises VCDPhaseError: if the timestamp is out of order or the
@@ -298,9 +323,7 @@ class VCDWriter:
             # Unroll for performance: self._dump_timestamp()
             if self._timestamp != self._last_dumped_ts:
                 self._last_dumped_ts = self._timestamp
-                self._ofile.write(
-                    '#{}\n{}\n'.format(self._timestamp, val_str)
-                )
+                self._ofile.write('#{}\n{}\n'.format(self._timestamp, val_str))
             else:
                 self._ofile.write(val_str + '\n')
 
@@ -333,14 +356,14 @@ class VCDWriter:
                 for num in sorted(cls.TIMESCALE_NUMS, reverse=True):
                     num_str = str(num)
                     if timescale.startswith(num_str):
-                        unit = timescale[len(num_str):].lstrip(' ')
+                        unit = timescale[len(num_str) :].lstrip(' ')
                         break
                 else:
-                    raise ValueError(
-                        'Invalid timescale num {}'.format(timescale))
+                    raise ValueError('Invalid timescale num {}'.format(timescale))
         else:
-            raise TypeError('Invalid timescale type {}'
-                            .format(type(timescale).__name__))
+            raise TypeError(
+                'Invalid timescale type {}'.format(type(timescale).__name__)
+            )
         if unit not in cls.TIMESCALE_UNITS:
             raise ValueError('Invalid timescale unit "{}"'.format(unit))
         return ' '.join([num_str, unit])
@@ -354,18 +377,15 @@ class VCDWriter:
     def close(self, timestamp=None):
         """Close VCD writer.
 
-        Any buffered VCD data is flushed to the output file. After
-        :meth:`close()`, no variable registration or value changes will be
-        accepted.
+        Any buffered VCD data is flushed to the output file. After :meth:`close()`, no
+        variable registration or value changes will be accepted.
 
-        :param int timestamp: optional final timestamp to insert into VCD
-                              stream.
+        :param int timestamp: optional final timestamp to insert into VCD stream.
 
         .. Note::
 
-            The output file is not automatically closed. It is up to the user
-            to ensure the output file is closed after the :class:`VCDWriter`
-            instance is closed.
+            The output file is not automatically closed. It is up to the user to ensure
+            the output file is closed after the :class:`VCDWriter` instance is closed.
 
         """
         if not self._closed:
@@ -375,9 +395,8 @@ class VCDWriter:
     def flush(self, timestamp=None):
         """Flush any buffered VCD data to output file.
 
-        If the VCD header has not already been written, calling `flush()` will
-        force the header to be written thus disallowing any further variable
-        registration.
+        If the VCD header has not already been written, calling `flush()` will force the
+        header to be written thus disallowing any further variable registration.
 
         :param int timestamp: optional timestamp to insert into VCD stream.
 
@@ -415,7 +434,8 @@ class VCDWriter:
 
                     for j, name in enumerate(scope[i:]):
                         scope_type = self._scope_types.get(
-                            scope[:i+j+1], self._default_scope_type)
+                            scope[: i + j + 1], self._default_scope_type
+                        )
                         yield '$scope {} {} $end'.format(scope_type, name)
                     break
             else:
@@ -505,7 +525,6 @@ class ScalarVariable(Variable):
 
 
 class EventVariable(Variable):
-
     def format_value(self, value, check=True):
         if value:
             return '1' + self.ident
@@ -519,8 +538,8 @@ class EventVariable(Variable):
 class StringVariable(Variable):
     """String variable as known by GTKWave.
 
-    Any "string" (character-chain) can be displayed as a change. This type is
-    only supported by GTKWave.
+    Any "string" (character-chain) can be displayed as a change. This type is only
+    supported by GTKWave.
 
     """
 
@@ -570,8 +589,8 @@ class RealVariable(Variable):
 class VectorVariable(Variable):
     """Bit vector variable type.
 
-    This is for the various non-scalar and non-real variable types including
-    integer, register, wire, etc.
+    This is for the various non-scalar and non-real variable types including integer,
+    register, wire, etc.
 
     """
 
@@ -588,11 +607,10 @@ class VectorVariable(Variable):
 
         .. Warning::
 
-            If *value* is of type :py:class:`str`, all characters must be one
-            of `'01xzXZ'`. For the sake of performance, checking **is not**
-            done to ensure value strings only contain conforming characters.
-            Thus it is possible to produce invalid VCD streams with invalid
-            string values.
+            If *value* is of type :py:class:`str`, all characters must be one of
+            `'01xzXZ'`. For the sake of performance, checking **is not** done to ensure
+            value strings only contain conforming characters. Thus it is possible to
+            produce invalid VCD streams with invalid string values.
 
         """
         if isinstance(self.size, tuple):
@@ -601,8 +619,7 @@ class VectorVariable(Variable):
             vstr_list = []
             vstr_len = 0
             size_sum = 0
-            for i, (v, size) in enumerate(zip(reversed(value),
-                                              reversed(self.size))):
+            for i, (v, size) in enumerate(zip(reversed(value), reversed(self.size))):
                 vstr = self._format_value(v, size, check)
                 if not vstr_list:
                     vstr_list.insert(0, vstr)
@@ -610,8 +627,10 @@ class VectorVariable(Variable):
                 else:
                     leftc = vstr_list[0][0]
                     rightc = vstr[0]
-                    if len(vstr) > 1 or ((rightc != leftc or leftc == '1') and
-                                         (rightc != '0' or leftc != '1')):
+                    if len(vstr) > 1 or (
+                        (rightc != leftc or leftc == '1')
+                        and (rightc != '0' or leftc != '1')
+                    ):
                         extendc = '0' if leftc == '1' else leftc
                         extend_size = size_sum - vstr_len
                         vstr_list.insert(0, extendc * extend_size)
@@ -627,17 +646,20 @@ class VectorVariable(Variable):
         if isinstance(value, int):
             max_val = 1 << size
             if check and (-value > (max_val >> 1) or value >= max_val):
-                raise ValueError('Value ({}) not representable in {} bits'
-                                 .format(value, size))
+                raise ValueError(
+                    'Value ({}) not representable in {} bits'.format(value, size)
+                )
             if value < 0:
                 value += max_val
             return format(value, 'b')
         elif value is None:
             return 'z'
         else:
-            if check and (not isinstance(value, str) or
-                          len(value) > size or
-                          any(c not in '01xzXZ-' for c in value)):
+            if check and (
+                not isinstance(value, str)
+                or len(value) > size
+                or any(c not in '01xzXZ-' for c in value)
+            ):
                 raise ValueError('Invalid vector value ({})'.format(value))
             return value
 

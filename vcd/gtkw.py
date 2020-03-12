@@ -2,11 +2,11 @@
 
 This module provides tools for generating GTKWave save files.
 
-`GTKWave`__ is an application for viewing VCD data. When opening a VCD file
-with GTKWave, by default, no VCD variables (signals) are displayed. It is thus
-useful to have an accompanying "save" file which configures various aspects of
-how GTKWave shows the VCD data, including which variables are displayed,
-variable aliases, color information, and more.
+`GTKWave`__ is an application for viewing VCD data. When opening a VCD file with
+GTKWave, by default, no VCD variables (signals) are displayed. It is thus useful to have
+an accompanying "save" file which configures various aspects of how GTKWave shows the
+VCD data, including which variables are displayed, variable aliases, color information,
+and more.
 
 __ http://gtkwave.sourceforge.net
 
@@ -23,24 +23,24 @@ import time
 class GTKWSave:
     """Write GTKWave save files.
 
-    This class provides methods for writing the various pieces of a GTKWave
-    save file. A GTKWave save file compliments a VCD dump file with dump file
-    specific configuration GTKWave uses to display the dump file.
+    This class provides methods for writing the various pieces of a GTKWave save file. A
+    GTKWave save file compliments a VCD dump file with dump file specific configuration
+    GTKWave uses to display the dump file.
 
-    A GTKWave save file is line-oriented ASCII text. Each line consists of a
-    single configuration directive. All directives are optional.
+    A GTKWave save file is line-oriented ASCII text. Each line consists of a single
+    configuration directive. All directives are optional.
 
-    Some directives, such as :meth:`dumpfile()`, are for general GTKWave
-    configuration. These general directives may be added anywhere in the save
-    file and in any order relative to other directives. Directives may also be
-    duplicated--the last one added will be used by GTKWave.
+    Some directives, such as :meth:`dumpfile()`, are for general GTKWave configuration.
+    These general directives may be added anywhere in the save file and in any order
+    relative to other directives. Directives may also be duplicated--the last one added
+    will be used by GTKWave.
 
-    The :meth:`trace()`, :meth:`trace_bits()`, :meth:`group()`, and
-    :meth:`blank` directives add signals to the "Signals" list which are traced
-    in the "Waves" frame. The order in which these signal traces are added
-    determines the order in GTKWave.
+    The :meth:`trace()`, :meth:`trace_bits()`, :meth:`group()`, and :meth:`blank`
+    directives add signals to the "Signals" list which are traced in the "Waves" frame.
+    The order in which these signal traces are added determines the order in GTKWave.
 
     """
+
     def __init__(self, savefile):
         self.file = savefile
         self.path = getattr(savefile, 'name', None)
@@ -93,18 +93,18 @@ class GTKWSave:
     def dumpfile(self, dump_path, abspath=True):
         """Add VCD dump file path to save file.
 
-        The `[dumpfile]` must be in the save file in order to only have to
-        specify the save file on the `gtkwave` command line. I.e.:
+        The `[dumpfile]` must be in the save file in order to only have to specify the
+        save file on the `gtkwave` command line. I.e.:
 
             $ gtkwave my.gtkw
 
-        If the `[dumpfile]` is not present in the save file, both the dump and
-        save files must be specified to `gtkwave`:
+        If the `[dumpfile]` is not present in the save file, both the dump and save
+        files must be specified to `gtkwave`:
 
             $ gtkwave my.vcd my.gtkw
 
-        :param dump_path: path to VCD dump file or None to produce special
-                          "(null)" value in the save file.
+        :param dump_path: path to VCD dump file or None to produce special "(null)"
+                          value in the save file.
         :param bool abspath: convert *dump_path* to an absolute path.
 
         """
@@ -151,8 +151,7 @@ class GTKWSave:
 
         Configuring the `[savefile]` is optional.
 
-        :param save_path: path to this save file. None will use the output
-                          file's path.
+        :param save_path: path to this save file. None will use the output file's path.
         :param bool abspath: determines whether to make the path absolute.
 
         """
@@ -171,8 +170,10 @@ class GTKWSave:
 
     def zoom_markers(self, zoom=0.0, marker=-1, **kwargs):
         """Set zoom, primary marker, and markers 'a' - 'z'."""
-        self._p('*{:.6f} {}'.format(zoom, marker),
-                *[kwargs.get(k, -1) for k in 'abcdefghijklmnopqrstuvwxyz'])
+        self._p(
+            '*{:.6f} {}'.format(zoom, marker),
+            *[kwargs.get(k, -1) for k in 'abcdefghijklmnopqrstuvwxyz'],
+        )
 
     def size(self, width, height):
         """Set GTKWave window size."""
@@ -212,8 +213,8 @@ class GTKWSave:
     def group(self, name, closed=False, highlight=False):
         """Contextmanager helper for :meth:`begin_group` and :meth:`end_group`.
 
-        This context manager starts a new group of signal traces and ends the
-        group when leaving the `with` block. E.g.:
+        This context manager starts a new group of signal traces and ends the group when
+        leaving the `with` block. E.g.:
 
             >>> with gtkw.group('mygroup'):
             ...     gtkw.trace('a.b.x')
@@ -254,9 +255,8 @@ class GTKWSave:
     def end_group(self, name, closed=False, highlight=False):
         """End a signal trace group.
 
-        This call must match with a prior call to :meth:`begin_group().
-        Consider using :meth:`group()` instead of :meth:`begin_group()` and
-        :meth:`end_group()`.
+        This call must match with a prior call to :meth:`begin_group(). Consider using
+        :meth:`group()` instead of :meth:`begin_group()` and :meth:`end_group()`.
 
         :param str name: the name/label of the trace group.
         :param bool closed: group should be closed at GTKWave startup.
@@ -276,8 +276,8 @@ class GTKWSave:
         """Add blank or label to trace signals list.
 
         :param str label: Optional label for the blank.
-        :param bool analog_extend: extend the height of an immediately
-                                   preceding analog trace signal.
+        :param bool analog_extend: extend the height of an immediately preceding analog
+                                   trace signal.
         :param bool highlight: blank should be highlighted at GTKWave startup.
 
         """
@@ -289,18 +289,25 @@ class GTKWSave:
         self._set_flags(encode_flags(flags))
         self._p('-' + label)
 
-    def trace(self, name, alias=None, color=None, datafmt='hex',
-              highlight=False, rjustify=True, extraflags=None,
-              translate_filter_file=None,
-              translate_filter_proc=None):
+    def trace(
+        self,
+        name,
+        alias=None,
+        color=None,
+        datafmt='hex',
+        highlight=False,
+        rjustify=True,
+        extraflags=None,
+        translate_filter_file=None,
+        translate_filter_proc=None,
+    ):
         """Add signal trace to save file.
 
         :param str name: fully-qualified name of signal to trace.
         :param str alias: optional alias to display instead of the *name*.
         :param color: optional color to use for the signal's trace.
-        :param str datafmt: the format used for data display. Must be one of
-                            'hex', 'dec', 'bin', 'oct', 'ascii', 'real', or
-                            'signed'.
+        :param str datafmt: the format used for data display. Must be one of 'hex',
+                            'dec', 'bin', 'oct', 'ascii', 'real', or 'signed'.
         :param bool highlight: trace should be highlighted at GTKWave startup.
         :param bool rjustify: trace name/alias should be right-justified.
         :param list extraflags: extra flags to apply to the trace.
@@ -309,15 +316,14 @@ class GTKWSave:
 
         .. Note::
 
-            GTKWave versions <= 3.3.64 require vector signal names to have a
-            bit range suffix. For example, an 8-bit vector variable
-            "module.myint" would be known by GTKWave as "module.myint[7:0]".
+            GTKWave versions <= 3.3.64 require vector signal names to have a bit range
+            suffix. For example, an 8-bit vector variable "module.myint" would be known
+            by GTKWave as "module.myint[7:0]".
 
             GTKWave versions after 3.3.64 do not use bit-range suffixes.
 
         """
-        if datafmt not in ['hex', 'dec', 'bin', 'oct', 'ascii', 'real',
-                           'signed']:
+        if datafmt not in ['hex', 'dec', 'bin', 'oct', 'ascii', 'real', 'signed']:
             raise ValueError('Invalid datafmt ({})'.format(datafmt))
         flags = [datafmt]
         if extraflags:
@@ -339,14 +345,22 @@ class GTKWSave:
         self._p(name)
 
     @contextmanager
-    def trace_bits(self, name, alias=None, color=None, datafmt='hex',
-                   highlight=False, rjustify=True, extraflags=None,
-                   translate_filter_file=None,
-                   translate_filter_proc=None):
+    def trace_bits(
+        self,
+        name,
+        alias=None,
+        color=None,
+        datafmt='hex',
+        highlight=False,
+        rjustify=True,
+        extraflags=None,
+        translate_filter_file=None,
+        translate_filter_proc=None,
+    ):
         """Contextmanager for tracing bits of a vector signal.
 
-        This allows each individual bit of a vector signal to have its own
-        trace (and trace configuration).
+        This allows each individual bit of a vector signal to have its own trace (and
+        trace configuration).
 
             >>> name = 'mod.myint'
             >>> with gtkw.trace_bits(name):
@@ -366,8 +380,17 @@ class GTKWSave:
         :param str translate_filter_proc: path to translate filter executable.
 
         """
-        self.trace(name, alias, color, datafmt, highlight, rjustify,
-                   extraflags, translate_filter_file, translate_filter_proc)
+        self.trace(
+            name,
+            alias,
+            color,
+            datafmt,
+            highlight,
+            rjustify,
+            extraflags,
+            translate_filter_file,
+            translate_filter_proc,
+        )
         flags = ['bin']
         if extraflags:
             flags.extend(extraflags)
@@ -405,22 +428,21 @@ class GTKWSave:
 def make_translation_filter(translations, datafmt='hex', size=None):
     """Create translation filter.
 
-    The returned translation filter string that can be written to a translation
-    filter file usable by GTKWave.
+    The returned translation filter string that can be written to a translation filter
+    file usable by GTKWave.
 
     :param translations:
 
-        Sequence of 2-tuples `(value, alias)` or 3-tuples `(value, alias,
-        color)`.
+        Sequence of 2-tuples `(value, alias)` or 3-tuples `(value, alias, color)`.
 
     :param str datafmt:
 
-        Format to apply to the translation values. This *datafmt* must match
-        the *datafmt* used with :meth:`GTKWSave.trace()`, otherwise these
-        translations will not be matched by GTKWave.
+        Format to apply to the translation values. This *datafmt* must match the
+        *datafmt* used with :meth:`GTKWSave.trace()`, otherwise these translations will
+        not be matched by GTKWave.
 
-    :returns: Translation filter string suitable for writing to a translation
-              filter file.
+    :returns: Translation filter string suitable for writing to a translation filter
+              file.
 
     """
     if datafmt == 'hex':
@@ -440,10 +462,11 @@ def make_translation_filter(translations, datafmt='hex', size=None):
             value = translation[0]
             rest = list(translation[1:])
             if isinstance(value, int):
-                value = bytes((value, )).decode('ascii')
+                value = bytes((value,)).decode('ascii')
             elif not isinstance(value, str):
-                raise TypeError("Invalid type ({}) for ascii translation"
-                                .format(type(value)))
+                raise TypeError(
+                    "Invalid type ({}) for ascii translation".format(type(value))
+                )
             elif len(value) != 1:
                 raise ValueError("Invalid ascii string '{}'".format(value))
             ascii_translations.append(tuple([value] + rest))
@@ -463,8 +486,9 @@ def make_translation_filter(translations, datafmt='hex', size=None):
         if datafmt in ['hex', 'oct', 'bin']:
             max_val = 1 << size
             if -value > (max_val >> 1) or value >= max_val:
-                raise ValueError('Value ({}) not representable in {} bits'
-                                 .format(value, size))
+                raise ValueError(
+                    'Value ({}) not representable in {} bits'.format(value, size)
+                )
             if value < 0:
                 # Two's compliment treatment
                 value += 1 << size
@@ -489,36 +513,36 @@ color_map = {
     'green': 4,
     'blue': 5,
     'indigo': 6,
-    'violet': 7
+    'violet': 7,
 }
 
 #: These are the valid GTKWave trace flag names.
 flag_names = [
-    'highlight',             # Highlight the trace item
-    'hex',                   # Hexadecimal data value representation
-    'dec',                   # Decimal data value representation
-    'bin',                   # Binary data value representation
-    'oct',                   # Octal data value representation
-    'rjustify',              # Right-justify signal name/alias
+    'highlight',  # Highlight the trace item
+    'hex',  # Hexadecimal data value representation
+    'dec',  # Decimal data value representation
+    'bin',  # Binary data value representation
+    'oct',  # Octal data value representation
+    'rjustify',  # Right-justify signal name/alias
     'invert',
     'reverse',
     'exclude',
-    'blank',                 # Used for blank, label, and/or analog height
-    'signed',                # Signed (2's compliment) data representation
-    'ascii',                 # ASCII character representation
-    'collapsed',             # Used for closed groups
-    'ftranslated',           # Trace translated with filter file
-    'ptranslated',           # Trace translated with filter process
-    'analog_step',           # Show trace as discrete analog steps
-    'analog_interpolated',   # Show trace as analog with interpolation
+    'blank',  # Used for blank, label, and/or analog height
+    'signed',  # Signed (2's compliment) data representation
+    'ascii',  # ASCII character representation
+    'collapsed',  # Used for closed groups
+    'ftranslated',  # Trace translated with filter file
+    'ptranslated',  # Trace translated with filter process
+    'analog_step',  # Show trace as discrete analog steps
+    'analog_interpolated',  # Show trace as analog with interpolation
     'analog_blank_stretch',  # Used to extend height of analog data
-    'real',                  # Read (floating point) data value representation
-    'analog_fullscale',      # Analog data scaled using full simulation time
+    'real',  # Read (floating point) data value representation
+    'analog_fullscale',  # Analog data scaled using full simulation time
     'zerofill',
     'onefill',
     'closed',
-    'grp_begin',             # Begin a group of signals
-    'grp_end',               # End a group of signals
+    'grp_begin',  # Begin a group of signals
+    'grp_end',  # End a group of signals
     'bingray',
     'graybin',
     'real2bits',
@@ -534,11 +558,11 @@ flag_masks = {name: (1 << i) for i, name in enumerate(flag_names)}
 def decode_flags(flags):
     """Decode hexadecimal flags from GTKWave save file into flag names.
 
-    This is useful for understanding what, for example "@802022" means when
-    inspecting a GTKWave save file.
+    This is useful for understanding what, for example "@802022" means when inspecting a
+    GTKWave save file.
 
-    :param flags: Hexadecimal flags from GTKWave save file; either as an
-                  integer or string with hexadecimal characters.
+    :param flags: Hexadecimal flags from GTKWave save file; either as an integer or
+                  string with hexadecimal characters.
     :returns: List of flag names
 
     """
@@ -559,20 +583,18 @@ def encode_flags(names):
     return reduce(operator.ior, (flag_masks[name] for name in names), 0)
 
 
-def spawn_gtkwave_interactive(dump_path, save_path,
-                              quiet=False):  # pragma: no cover
+def spawn_gtkwave_interactive(dump_path, save_path, quiet=False):  # pragma: no cover
     """Spawn gtkwave process in interactive mode.
 
-    A process pipeline is constructed such that the contents of the VCD dump
-    file at *dump_path* are displayed interactively as the dump file is being
-    written (i.e. with :class:`~vcd.writer.VCDWriter`.
+    A process pipeline is constructed such that the contents of the VCD dump file at
+    *dump_path* are displayed interactively as the dump file is being written (i.e. with
+    :class:`~vcd.writer.VCDWriter`.
 
     The process pipeline built is approximately equivalent to::
 
         $ tail -f dump_path | shmidcat | gtkwave -vI save_path
 
-    The ``tail``, ``shmidcat``, and ``gtkwave`` executables must be found in
-    ``$PATH``.
+    The ``tail``, ``shmidcat``, and ``gtkwave`` executables must be found in ``$PATH``.
 
     .. Warning::
 
@@ -580,17 +602,15 @@ def spawn_gtkwave_interactive(dump_path, save_path,
 
     .. Note::
 
-        A child python process of the caller will remain running until the
-        GTKWave window is closed. This process ensures that the various other
-        child processes are properly reaped.
+        A child python process of the caller will remain running until the GTKWave
+        window is closed. This process ensures that the various other child processes
+        are properly reaped.
 
-    :param str dump_path: path to VCD dump file. The dump file must exist, but
-                          be empty.
+    :param str dump_path: path to VCD dump file. The dump file must exist, but be empty.
     :param str save_path: path to GTKWave save file. The save file will be read
-                          immediately by GTKWave and thus must be completely
-                          written.
-    :param bool quiet: quiet GTKWave's output by closing its `stdout` and
-                       `stderr` file descriptors.
+                          immediately by GTKWave and thus must be completely written.
+    :param bool quiet: quiet GTKWave's output by closing its `stdout` and `stderr` file
+                       descriptors.
 
     """
     import signal
@@ -626,8 +646,7 @@ def spawn_gtkwave_interactive(dump_path, save_path,
                 devnull = open(os.devnull, 'w')
                 os.dup2(devnull.fileno(), stdout_fd)
                 os.dup2(devnull.fileno(), stderr_fd)
-            os.execlp('gtkwave',
-                      'gtkwave', '--vcd', '--interactive', save_path)
+            os.execlp('gtkwave', 'gtkwave', '--vcd', '--interactive', save_path)
 
         # The first forked process exists to do this cleanup...
         os.waitpid(gtkwave_pid, 0)

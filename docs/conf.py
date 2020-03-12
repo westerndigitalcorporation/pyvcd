@@ -39,19 +39,27 @@ htmlhelp_basename = 'pyvcddoc'
 
 latex_elements = {}
 latex_documents = [
-    (master_doc, 'pyvcd.tex', 'pyvcd Documentation',
-     'Peter Grayson and Steven Sprouse', 'manual'),
+    (
+        master_doc,
+        'pyvcd.tex',
+        'pyvcd Documentation',
+        'Peter Grayson and Steven Sprouse',
+        'manual',
+    ),
 ]
 
 # Options for manual page output
-man_pages = [
-    (master_doc, 'pyvcd', 'pyvcd Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, 'pyvcd', 'pyvcd Documentation', [author], 1)]
 
 # Options for Texinfo output
 texinfo_documents = [
-    (master_doc, 'pyvcd', 'pyvcd Documentation',
-     author, 'pyvcd', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        'pyvcd',
+        'pyvcd Documentation',
+        author,
+        'pyvcd',
+        'One line description of project.',
+        'Miscellaneous',
+    ),
 ]

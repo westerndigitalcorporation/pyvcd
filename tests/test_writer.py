@@ -19,29 +19,34 @@ def test_vcd_init(capsys):
         VCDWriter(sys.stdout, default_scope_type='InVaLiD')
 
 
-@pytest.mark.parametrize('timescale, expected', [
-    ('1 us', '1 us'),
-    ('us', '1 us'),
-    ((1, 'ns'), '1 ns'),
-    (('fs', ), '1 fs'),
-    ('100ps', '100 ps'),
-])
+@pytest.mark.parametrize(
+    'timescale, expected',
+    [
+        ('1 us', '1 us'),
+        ('us', '1 us'),
+        ((1, 'ns'), '1 ns'),
+        (('fs',), '1 fs'),
+        ('100ps', '100 ps'),
+    ],
+)
 def test_vcd_timescales(capsys, timescale, expected):
     with VCDWriter(sys.stdout, date='', timescale=timescale):
         pass
     lines = split_lines(capsys)
-    assert lines == ['$timescale {} $end'.format(expected),
-                     '$enddefinitions $end']
+    assert lines == ['$timescale {} $end'.format(expected), '$enddefinitions $end']
 
 
-@pytest.mark.parametrize('timescale, exc_type', [
-    ('2 us', ValueError),
-    ('1 Gs', ValueError),
-    ((), ValueError),
-    (('1', 'ns'), ValueError),
-    ((1, 'us', 'ns'), ValueError),
-    (100, TypeError),
-])
+@pytest.mark.parametrize(
+    'timescale, exc_type',
+    [
+        ('2 us', ValueError),
+        ('1 Gs', ValueError),
+        ((), ValueError),
+        (('1', 'ns'), ValueError),
+        ((1, 'us', 'ns'), ValueError),
+        (100, TypeError),
+    ],
+)
 def test_vcd_timescale_invalid(capsys, timescale, exc_type):
     with pytest.raises(exc_type):
         VCDWriter(sys.stdout, timescale=timescale)
@@ -72,8 +77,7 @@ def test_vcd_close(capsys):
     assert not split_lines(capsys)
     vcd.close()
     lines = split_lines(capsys)
-    assert lines == ['$timescale 1 us $end',
-                     '$enddefinitions $end']
+    assert lines == ['$timescale 1 us $end', '$enddefinitions $end']
     with pytest.raises(VCDPhaseError):
         vcd.register_var('a', 'b', 'integer')
     vcd.close()  # Idempotency test
@@ -92,10 +96,7 @@ def test_vcd_change_after_close(capsys):
 
 
 def test_vcd_no_scopes(capsys):
-    with VCDWriter(sys.stdout,
-                   date='today',
-                   version='some\nversion',
-                   comment='hello'):
+    with VCDWriter(sys.stdout, date='today', version='some\nversion', comment='hello'):
         pass
     lines = split_lines(capsys)
     expected_lines = [
@@ -164,38 +165,40 @@ def test_vcd_scopes(capsys):
         with pytest.raises(TypeError):
             vcd.set_scope_type({'a', 'b', 'c'}, 'module')
 
-    expected_lines = ['$date',
-                      '$timescale',
-                      '$scope module aaa',
-                      '$var',
-                      '$scope fork bbb',
-                      '$var',
-                      '$var',
-                      '$scope module ccc',
-                      '$var',
-                      '$upscope',
-                      '$scope module ddd',
-                      '$var',
-                      '$upscope',
-                      '$upscope',
-                      '$upscope',
-                      '$scope module eee',
-                      '$scope module fff',
-                      '$scope task ggg',
-                      '$var',
-                      '$upscope',
-                      '$upscope',
-                      '$upscope',
-                      '$enddefinitions',
-                      '#0',
-                      '$dumpvars',
-                      'bz 0',
-                      'bx 1',
-                      'bx 2',
-                      'bx 3',
-                      'bx 4',
-                      'bx 5',
-                      '$end']
+    expected_lines = [
+        '$date',
+        '$timescale',
+        '$scope module aaa',
+        '$var',
+        '$scope fork bbb',
+        '$var',
+        '$var',
+        '$scope module ccc',
+        '$var',
+        '$upscope',
+        '$scope module ddd',
+        '$var',
+        '$upscope',
+        '$upscope',
+        '$upscope',
+        '$scope module eee',
+        '$scope module fff',
+        '$scope task ggg',
+        '$var',
+        '$upscope',
+        '$upscope',
+        '$upscope',
+        '$enddefinitions',
+        '#0',
+        '$dumpvars',
+        'bz 0',
+        'bx 1',
+        'bx 2',
+        'bx 3',
+        'bx 4',
+        'bx 5',
+        '$end',
+    ]
     for line, expected in zip(split_lines(capsys), expected_lines):
         print(line, '|', expected)
         assert line.startswith(expected)
@@ -205,16 +208,18 @@ def test_vcd_init_timestamp(capsys):
     with VCDWriter(sys.stdout, date='today', init_timestamp=123) as vcd:
         vcd.register_var('a', 'n', 'integer', 8, init='z')
 
-    expected_lines = ['$date',
-                      '$timescale',
-                      '$scope module a',
-                      '$var integer 8 0 n $end',
-                      '$upscope',
-                      '$enddefinitions',
-                      '#123',
-                      '$dumpvars',
-                      'bz 0',
-                      '$end']
+    expected_lines = [
+        '$date',
+        '$timescale',
+        '$scope module a',
+        '$var integer 8 0 n $end',
+        '$upscope',
+        '$enddefinitions',
+        '#123',
+        '$dumpvars',
+        'bz 0',
+        '$end',
+    ]
     for line, expected in zip(split_lines(capsys), expected_lines):
         print(line, '|', expected)
         assert line.startswith(expected)
@@ -222,18 +227,23 @@ def test_vcd_init_timestamp(capsys):
 
 def test_vcd_scope_tuple(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        vcd.register_var(('aaa', ), 'nn0', 'integer', 8)
+        vcd.register_var(('aaa',), 'nn0', 'integer', 8)
         vcd.register_var(('aaa', 'bbb'), 'nn1', 'integer', 8)
         vcd.register_var('aaa.bbb.ccc', 'nn2', 'integer', 8)
     lines = split_lines(capsys)
-    for line, expected in zip(lines, ['$date',
-                                      '$timescale',
-                                      '$scope module aaa',
-                                      '$var',
-                                      '$scope module bbb',
-                                      '$var',
-                                      '$scope module ccc',
-                                      '$var']):
+    for line, expected in zip(
+        lines,
+        [
+            '$date',
+            '$timescale',
+            '$scope module aaa',
+            '$var',
+            '$scope module bbb',
+            '$var',
+            '$scope module ccc',
+            '$var',
+        ],
+    ):
         assert line.startswith(expected)
 
 
@@ -394,17 +404,19 @@ def test_vcd_real_var(capsys):
         with pytest.raises(ValueError):
             vcd.change(v0, 4, 'InVaLiD')
     lines = split_lines(capsys)
-    expected_last = ['#1',
-                     'r1234.5 0',
-                     'r5432.1 1',
-                     '#2',
-                     'r0 0',
-                     'r1 1',
-                     '#3',
-                     'r999.9 0',
-                     'r-999.9 1']
+    expected_last = [
+        '#1',
+        'r1234.5 0',
+        'r5432.1 1',
+        '#2',
+        'r0 0',
+        'r1 1',
+        '#3',
+        'r999.9 0',
+        'r-999.9 1',
+    ]
 
-    assert lines[-len(expected_last):] == expected_last
+    assert lines[-len(expected_last) :] == expected_last
 
 
 def test_vcd_integer_var(capsys):
@@ -424,18 +436,20 @@ def test_vcd_integer_var(capsys):
         with pytest.raises(ValueError):
             vcd.change(v1, 4, 1.234)
 
-    expected_last = ['#1',
-                     'b100 0',
-                     'b11111100 1',
-                     '#2',
-                     'bz 0',
-                     'bX 1',
-                     '#3',
-                     'bz 1',
-                     'b1010 0']
+    expected_last = [
+        '#1',
+        'b100 0',
+        'b11111100 1',
+        '#2',
+        'bz 0',
+        'bX 1',
+        '#3',
+        'bz 1',
+        'b1010 0',
+    ]
 
     lines = split_lines(capsys)
-    assert lines[-len(expected_last):] == expected_last
+    assert lines[-len(expected_last) :] == expected_last
 
 
 def test_vcd_dump_on_no_op(capsys):
@@ -645,16 +659,19 @@ def test_variable():
         var.format_value(0)
 
 
-@pytest.mark.parametrize('expected, unsigned, signed', [
-    ('b0 v', 0, 0),
-    ('b1 v', 1, 1),
-    ('b10 v', 2, 2),
-    ('b11 v', 3, 3),
-    ('b100 v', 4, -4),
-    ('b101 v', 5, -3),
-    ('b110 v', 6, -2),
-    ('b111 v', 7, -1),
-])
+@pytest.mark.parametrize(
+    'expected, unsigned, signed',
+    [
+        ('b0 v', 0, 0),
+        ('b1 v', 1, 1),
+        ('b10 v', 2, 2),
+        ('b11 v', 3, 3),
+        ('b100 v', 4, -4),
+        ('b101 v', 5, -3),
+        ('b110 v', 6, -2),
+        ('b111 v', 7, -1),
+    ],
+)
 def test_vector_var_3bit(expected, unsigned, signed):
     var = VectorVariable('v', 'integer', 3, unsigned)
     assert expected == var.format_value(unsigned)
@@ -671,18 +688,21 @@ def test_vector_var_3bit_invalid():
         var.format_value(-5)
 
 
-@pytest.mark.parametrize('size, value, expected', [
-    ((8, 4, 1), (0, 0, 0), 'b0 v'),
-    ((8, 4, 1), (1, 0, 0), 'b100000 v'),
-    ((8, 4, 1), (0, 0, 1), 'b1 v'),
-    ((8, 4, 1), (1, 1, 1), 'b100011 v'),
-    ((8, 4, 1), ('z', 'x', '-'), 'bzxxxx- v'),
-    ((8, 4, 1), ('0', '1', None), 'b1z v'),
-    ((8, 4, 1), (0xf, 0, 1), 'b111100001 v'),
-    ((8, 4, 1), (None, 'x', None), 'bzxxxxz v'),
-    ((8, ), (1, ), 'b1 v'),
-    ((8, 32), (0b1010, 0xff00ff00), 'b101011111111000000001111111100000000 v'),
-])
+@pytest.mark.parametrize(
+    'size, value, expected',
+    [
+        ((8, 4, 1), (0, 0, 0), 'b0 v'),
+        ((8, 4, 1), (1, 0, 0), 'b100000 v'),
+        ((8, 4, 1), (0, 0, 1), 'b1 v'),
+        ((8, 4, 1), (1, 1, 1), 'b100011 v'),
+        ((8, 4, 1), ('z', 'x', '-'), 'bzxxxx- v'),
+        ((8, 4, 1), ('0', '1', None), 'b1z v'),
+        ((8, 4, 1), (0xF, 0, 1), 'b111100001 v'),
+        ((8, 4, 1), (None, 'x', None), 'bzxxxxz v'),
+        ((8,), (1,), 'b1 v'),
+        ((8, 32), (0b1010, 0xFF00FF00), 'b101011111111000000001111111100000000 v'),
+    ],
+)
 def test_vector_tuple(size, value, expected):
     var = VectorVariable('v', 'integer', size, value)
     assert expected == var.format_value(value)
@@ -698,22 +718,24 @@ def test_vcd_string_var(capsys):
             vcd.change(v0, 4, 'no string allowed')
         vcd.change(v0, 4, None)
         vcd.change(v0, 5, '!')
-    expected = ['#0',
-                '$dumpvars',
-                'sx 0',
-                '$end',
-                '#1',
-                'shello 0',
-                '#2',
-                's 0',
-                '#3',
-                'sworld 0',
-                '#4',
-                's 0',
-                '#5',
-                's! 0']
+    expected = [
+        '#0',
+        '$dumpvars',
+        'sx 0',
+        '$end',
+        '#1',
+        'shello 0',
+        '#2',
+        's 0',
+        '#3',
+        'sworld 0',
+        '#4',
+        's 0',
+        '#5',
+        's! 0',
+    ]
     lines = split_lines(capsys)
-    assert expected == lines[-len(expected):]
+    assert expected == lines[-len(expected) :]
 
 
 def test_execution_speed():
@@ -727,9 +749,7 @@ def test_execution_speed():
     t0 = timeit.default_timer()
     with open(os.devnull, 'w') as f:
         with VCDWriter(f, timescale=(10, 'ns'), date='today') as writer:
-            counter_var = writer.register_var(
-                'a.b.c', 'counter', 'integer', size=8
-            )
+            counter_var = writer.register_var('a.b.c', 'counter', 'integer', size=8)
             for i in range(1000, 300000, 300):
                 for timestamp, value in enumerate(range(10, 200, 2)):
                     writer.change(counter_var, i + timestamp, value)

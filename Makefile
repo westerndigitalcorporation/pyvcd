@@ -1,7 +1,11 @@
 PYTHON ?= python
 
 .PHONY: lint
-lint: lint-isort lint-flake8
+lint: lint-black lint-isort lint-flake8
+
+.PHONY: lint-black
+lint-black:
+	black --check --quiet --diff .
 
 .PHONY: lint-isort
 lint-isort:
@@ -12,7 +16,11 @@ lint-flake8:
 	flake8 .
 
 .PHONY: format
-format: format-isort
+format: format-black format-isort
+
+.PHONY: format-black
+format-black:
+	black --quiet --diff .
 
 .PHONY: format-isort
 format-isort:

@@ -8,6 +8,7 @@ import pytest
 @pytest.yield_fixture
 def gtkw():
     import vcd.gtkw
+
     sio = io.StringIO()
     gtkw = vcd.gtkw.GTKWSave(sio)
     try:
