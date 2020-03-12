@@ -355,6 +355,7 @@ def test_vcd_multiple_events(capsys):
 
     assert expected_lines == split_lines(capsys)
 
+
 def test_vcd_scalar_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         v0 = vcd.register_var('aaa', 'nn0', 'integer', 1)
@@ -733,5 +734,5 @@ def test_execution_speed():
             for i in range(1000, 300000, 300):
                 for timestamp, value in enumerate(range(10, 200, 2)):
                     writer.change(counter_var, i + timestamp, value)
-    elapsed =  timeit.default_timer() - t0
+    elapsed = timeit.default_timer() - t0
     print('Elapsed:', elapsed)
