@@ -6,6 +6,6 @@
     ~vcd.writer.VCDWriter
 
 """
-from .writer import VCDWriter, VCDPhaseError
+from .writer import VCDPhaseError, VCDWriter
 
 __all__ = ('VCDWriter', 'VCDPhaseError')

@@ -3,8 +3,8 @@
 
 # flake8: noqa
 
-import sys
 import os
+import sys
 
 from setuptools_scm import get_version
 

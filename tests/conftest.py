@@ -1,6 +1,7 @@
 """Custom test fixtures for pyvcd."""
 
 import io
+
 import pytest
 
 

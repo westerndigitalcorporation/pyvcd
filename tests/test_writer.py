@@ -1,12 +1,12 @@
 '''Tests for VCDWriter.'''
 
-import sys
 import os
+import sys
 import timeit
 
 import pytest
 
-from vcd.writer import VCDWriter, VCDPhaseError, Variable, VectorVariable
+from vcd.writer import Variable, VCDPhaseError, VCDWriter, VectorVariable
 
 
 def split_lines(capsys):
