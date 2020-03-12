@@ -5,6 +5,7 @@ __pycache__
 .coverage
 htmlcov/
 build/
+dist/
 docs/_build/
 .cache/
 .tox/
