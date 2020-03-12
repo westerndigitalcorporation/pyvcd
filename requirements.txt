@@ -1,6 +1,6 @@
+flake8
 isort
 pytest
 pytest-cov
-pytest-flake8
 setuptools_scm
 tox
