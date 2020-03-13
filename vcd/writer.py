@@ -211,7 +211,10 @@ class VCDWriter:
             var = ScalarVariable(ident, var_type, size, init)
         else:
             if init is None:
-                init = 'x'
+                if isinstance(size, tuple):
+                    init = tuple('x' * len(size))
+                else:
+                    init = 'x'
             var = VectorVariable(ident, var_type, size, init)
 
         var.format_value(init, check=True)
@@ -616,6 +619,12 @@ class VectorVariable(Variable):
 
         """
         if isinstance(self.size, tuple):
+            if len(value) != len(self.size):
+                raise ValueError(
+                    'Compound value ({}) must be length {}'.format(
+                        value, len(self.size)
+                    )
+                )
             # The string is built-up right-to-left in order to minimize/avoid
             # left-extension in the final value string.
             vstr_list = []
@@ -666,4 +675,7 @@ class VectorVariable(Variable):
             return value
 
     def dump_off(self):
-        return self.format_value('x', check=False)
+        if isinstance(self.size, tuple):
+            return self.format_value(tuple('x' * len(self.size)), check=False)
+        else:
+            return self.format_value('x', check=False)

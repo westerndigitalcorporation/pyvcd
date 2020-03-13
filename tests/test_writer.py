@@ -738,17 +738,29 @@ def test_vector_tuple(size, value, expected):
 def test_dump_off_compound_vector(capsys):
     with VCDWriter(sys.stdout) as vcd:
         v0 = vcd.register_var('aaa', 'n0', 'integer', size=(4, 4, 8), init=None)
+        vcd.register_var('aaa', 'n1', 'integer', size=(4, 4, 8), init=('z', 'x', '-'))
+        vcd.register_var('aaa', 'n2', 'integer', size=(1, 1), init=(True, False))
+        v3 = vcd.register_var('aaa', 'n3', 'integer', size=(1, 2, 3), init='xxx')
+        with pytest.raises(ValueError):
+            vcd.register_var('aaa', 'n4', 'integer', size=(1, 2, 3), init=(1, 2))
         vcd.change(v0, 1, (0, 0, 0))
         vcd.change(v0, 2, (15, 0, 0xFF))
         vcd.dump_off(3)
-        vcd.dump_on(4)
+        vcd.change(v3, 4, '1-1')
+        vcd.dump_on(5)
     expected = [
         '$var integer 16 0 n0 $end',
+        '$var integer 16 1 n1 $end',
+        '$var integer 2 2 n2 $end',
+        '$var integer 6 3 n3 $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
         'bx 0',
+        'bzxxxx-------- 1',
+        'b10 2',
+        'bx 3',
         '$end',
         '#1',
         'b0 0',
@@ -757,10 +769,16 @@ def test_dump_off_compound_vector(capsys):
         '#3',
         '$dumpoff',
         'bx 0',
+        'bx 1',
+        'bx 2',
+        'bx 3',
         '$end',
-        '#4',
+        '#5',
         '$dumpon',
         'b1111000011111111 0',
+        'bzxxxx-------- 1',
+        'b10 2',
+        'b1--001 3',
         '$end',
     ]
     lines = split_lines(capsys)
