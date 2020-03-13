@@ -718,10 +718,11 @@ def test_vcd_string_var(capsys):
             vcd.change(v0, 4, 'no string allowed')
         vcd.change(v0, 4, None)
         vcd.change(v0, 5, '!')
+        vcd.dump_off(6)
     expected = [
         '#0',
         '$dumpvars',
-        'sx 0',
+        's 0',
         '$end',
         '#1',
         'shello 0',
@@ -733,6 +734,9 @@ def test_vcd_string_var(capsys):
         's 0',
         '#5',
         's! 0',
+        '#6',
+        '$dumpoff',
+        '$end',
     ]
     lines = split_lines(capsys)
     assert expected == lines[-len(expected) :]

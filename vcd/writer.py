@@ -196,6 +196,8 @@ class VCDWriter:
         if init is None:
             if var_type == 'real':
                 init = 0.0
+            elif var_type == 'string':
+                init = ''
             elif isinstance(size, tuple):
                 init = tuple('x' * len(size))
             else:
