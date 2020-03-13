@@ -815,8 +815,16 @@ def test_execution_speed():
     with open(os.devnull, 'w') as f:
         with VCDWriter(f, timescale=(10, 'ns'), date='today') as writer:
             counter_var = writer.register_var('a.b.c', 'counter', 'integer', size=8)
+            compound_var = writer.register_var(
+                'a.b.c', 'compound', 'integer', size=(1, 3, 4)
+            )
             for i in range(1000, 300000, 300):
                 for timestamp, value in enumerate(range(10, 200, 2)):
                     writer.change(counter_var, i + timestamp, value)
+                    writer.change(
+                        compound_var,
+                        i + timestamp,
+                        (timestamp & 0b1, timestamp & 0b111, timestamp & 0b1111),
+                    )
     elapsed = timeit.default_timer() - t0
     print('Elapsed:', elapsed)
