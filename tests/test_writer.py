@@ -8,6 +8,9 @@ import pytest
 
 from vcd.writer import (
     CompoundVectorVariable,
+    ScopeType,
+    TimescaleMagnitude,
+    TimescaleUnit,
     Variable,
     VCDPhaseError,
     VCDWriter,
@@ -27,7 +30,13 @@ def test_vcd_init(capsys):
 
 @pytest.mark.parametrize(
     'timescale, expected',
-    [('1 us', '1 us'), ('us', '1 us'), ((1, 'ns'), '1 ns'), ('100ps', '100 ps')],
+    [
+        ('1 us', '1 us'),
+        ('us', '1 us'),
+        ((1, 'ns'), '1 ns'),
+        ('100ps', '100 ps'),
+        ((TimescaleMagnitude.ten, TimescaleUnit.femtosecond), '10 fs'),
+    ],
 )
 def test_vcd_timescales(capsys, timescale, expected):
     with VCDWriter(sys.stdout, date='', timescale=timescale):
@@ -154,7 +163,7 @@ def test_vcd_no_duplicates(capsys):
 
 def test_vcd_scopes(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        vcd.set_scope_type('eee.fff.ggg', 'task')
+        vcd.set_scope_type('eee.fff.ggg', ScopeType.task)
         vcd.register_var('aaa.bbb', 'nn0', 'integer', 8, init='z')
         vcd.register_var('aaa.bbb', 'nn1', 'integer', 8)
         vcd.register_var('aaa', 'nn2', 'integer', 8)

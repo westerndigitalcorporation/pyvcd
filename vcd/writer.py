@@ -4,6 +4,7 @@ This module provides :class:`VCDWriter` for writing VCD files.
 
 """
 from datetime import datetime
+from enum import Enum
 from itertools import zip_longest
 from numbers import Number
 from typing import (
@@ -21,6 +22,59 @@ from typing import (
 )
 
 
+class ScopeType(Enum):
+    """Valid VCD scope types."""
+
+    begin = 'begin'
+    fork = 'fork'
+    function = 'function'
+    module = 'module'
+    task = 'task'
+
+
+class VarType(Enum):
+    """Valid VCD variable types."""
+
+    event = 'event'
+    integer = 'integer'
+    parameter = 'parameter'
+    real = 'real'
+    realtime = 'realtime'
+    reg = 'reg'
+    supply0 = 'supply0'
+    supply1 = 'supply1'
+    time = 'time'
+    tri = 'tri'
+    triand = 'triand'
+    trior = 'trior'
+    trireg = 'trireg'
+    tri0 = 'tri0'
+    tri1 = 'tri1'
+    wand = 'wand'
+    wire = 'wire'
+    wor = 'wor'
+    string = 'string'
+
+
+class TimescaleMagnitude(Enum):
+    """Valid timescale magnitudes."""
+
+    one = 1
+    ten = 10
+    hundred = 100
+
+
+class TimescaleUnit(Enum):
+    """Valid timescale units."""
+
+    second = 's'
+    millisecond = 'ms'
+    microsecond = 'us'
+    nanosecond = 'ns'
+    picosecond = 'ps'
+    femtosecond = 'fs'
+
+
 class VCDPhaseError(Exception):
     """Indicating a :class:`VCDWriter` method was called in the wrong phase.
 
@@ -33,7 +87,7 @@ class VCDPhaseError(Exception):
 ScopeTuple = Tuple[str, ...]
 ScopeInput = Union[str, Sequence[str]]
 TimeValue = Union[int, float]
-Timescale = Union[Tuple[int, str], str]
+Timescale = Union[Tuple[TimescaleMagnitude, TimescaleUnit], Tuple[int, str], str]
 CompoundSize = Sequence[int]
 VariableSize = Union[int, CompoundSize]
 
@@ -66,38 +120,6 @@ class VCDWriter:
 
     """
 
-    #: Valid VCD scope types.
-    SCOPE_TYPES = ['begin', 'fork', 'function', 'module', 'task']
-
-    #: Valid VCD variable types.
-    VAR_TYPES = [
-        'event',
-        'integer',
-        'parameter',
-        'real',
-        'realtime',
-        'reg',
-        'supply0',
-        'supply1',
-        'time',
-        'tri',
-        'triand',
-        'trior',
-        'trireg',
-        'tri0',
-        'tri1',
-        'wand',
-        'wire',
-        'wor',
-        'string',
-    ]
-
-    #: Valid timescale numbers.
-    TIMESCALE_NUMS = [1, 10, 100]
-
-    #: Valid timescale units.
-    TIMESCALE_UNITS = ['s', 'ms', 'us', 'ns', 'ps', 'fs']
-
     def __init__(
         self,
         file: IO,
@@ -105,7 +127,7 @@ class VCDWriter:
         date: Optional[str] = None,
         comment: str = '',
         version: str = '',
-        default_scope_type: str = 'module',
+        default_scope_type: Union[ScopeType, str] = ScopeType.module,
         scope_sep: str = '.',
         check_values: bool = True,
         init_timestamp: TimeValue = 0,
@@ -117,11 +139,7 @@ class VCDWriter:
             '$comment': comment,
             '$version': version,
         }
-        if default_scope_type not in self.SCOPE_TYPES:
-            raise ValueError(
-                'Invalid default scope type ({})'.format(default_scope_type)
-            )
-        self._default_scope_type = default_scope_type
+        self._default_scope_type = ScopeType(default_scope_type)
         self._scope_sep = scope_sep
         self._check_values = check_values
         self._registering = True
@@ -130,16 +148,18 @@ class VCDWriter:
         self._next_var_id: int = 0
         self._scope_var_strs: Dict[ScopeTuple, List[str]] = {}
         self._scope_var_names: Dict[ScopeTuple, Set[str]] = {}
-        self._scope_types: Dict[ScopeTuple, str] = {}
+        self._scope_types: Dict[ScopeTuple, ScopeType] = {}
         self._vars: List[Variable] = []
         self._timestamp = int(init_timestamp)
         self._last_dumped_ts: Optional[int] = None
 
-    def set_scope_type(self, scope: ScopeInput, scope_type: str) -> None:
+    def set_scope_type(
+        self, scope: ScopeInput, scope_type: Union[ScopeType, str]
+    ) -> None:
         """Set the scope_type for a given scope.
 
-        The scope's type may be set to one of the valid :const:`SCOPE_TYPES`. VCD viewer
-        applications may display different scope types differently.
+        The scope's type may be set to one of the valid :class:`ScopeType` values. VCD
+        viewer applications may display different scope types differently.
 
         :param scope: The scope to set the type of.
         :type scope: str or sequence of str
@@ -147,8 +167,7 @@ class VCDWriter:
         :raises ValueError: for invalid `scope_type`
 
         """
-        if scope_type is not None and scope_type not in self.SCOPE_TYPES:
-            raise ValueError('Invalid scope_type "{}"'.format(scope_type))
+        scope_type = ScopeType(scope_type)
         scope_tuple = self._get_scope_tuple(scope)
         self._scope_types[scope_tuple] = scope_type
 
@@ -156,7 +175,7 @@ class VCDWriter:
         self,
         scope: ScopeInput,
         name: str,
-        var_type: str,
+        var_type: Union[VarType, str],
         size: Optional[VariableSize] = None,
         init: VarValue = None,
         ident: str = None,
@@ -176,7 +195,7 @@ class VCDWriter:
         :param scope: The hierarchical scope that the variable belongs within.
         :type scope: str or sequence of str
         :param str name: Name of the variable.
-        :param str var_type: One of :const:`VAR_TYPES`.
+        :param VarType var_type: Type of the variable.
         :param size:
             Size, in bits, of the variable. The *size* may be expressed as an int or,
             for vector variable types, a tuple of int. When the size is expressed as a
@@ -198,8 +217,7 @@ class VCDWriter:
             raise VCDPhaseError('Cannot register after close().')
         elif not self._registering:
             raise VCDPhaseError('Cannot register after time 0.')
-        elif var_type not in self.VAR_TYPES:
-            raise ValueError('Invalid var_type "{}"'.format(var_type))
+        var_type = VarType(var_type)
 
         scope_tuple = self._get_scope_tuple(scope)
 
@@ -215,9 +233,9 @@ class VCDWriter:
             ident = format(self._next_var_id, 'x')
 
         if size is None:
-            if var_type in ['integer', 'real', 'realtime']:
+            if var_type in [VarType.integer, VarType.real, VarType.realtime]:
                 size = 64
-            elif var_type in ['event', 'string']:
+            elif var_type in [VarType.event, VarType.string]:
                 size = 1
             else:
                 raise ValueError('Must supply size for {} var_type'.format(var_type))
@@ -229,19 +247,19 @@ class VCDWriter:
             var_size = size
 
         var_str = '$var {var_type} {size} {ident} {name} $end'.format(
-            var_type=var_type, size=var_size, ident=ident, name=name
+            var_type=var_type.value, size=var_size, ident=ident, name=name
         )
 
         var: Variable
-        if var_type == 'string':
+        if var_type == VarType.string:
             if init is None:
                 init = ''
             var = StringVariable(ident, var_type, size, init)
-        elif var_type == 'event':
+        elif var_type == VarType.event:
             if init is None:
                 init = True
             var = EventVariable(ident, var_type, size, init)
-        elif var_type == 'real':
+        elif var_type == VarType.real:
             if init is None:
                 init = 0.0
             var = RealVariable(ident, var_type, size, init)
@@ -348,7 +366,7 @@ class VCDWriter:
             raise VCDPhaseError('Cannot change value after close()')
 
         # Format value early to catch any errors before writing output.
-        if value != var.value or var.type == 'event':
+        if value != var.value or var.type == VarType.event:
             val_str = var.format_value(value, self._check_values)
         else:
             val_str = ''
@@ -385,30 +403,29 @@ class VCDWriter:
     def _check_timescale(cls, timescale: Timescale) -> str:
         if isinstance(timescale, (list, tuple)):
             if len(timescale) == 2:
-                num, unit = timescale
+                mag = TimescaleMagnitude(timescale[0])
+                unit = TimescaleUnit(timescale[1])
             else:
                 raise ValueError('Invalid timescale {}'.format(timescale))
         elif isinstance(timescale, str):
-            if timescale in cls.TIMESCALE_UNITS:
-                num = 1
-                unit = timescale
+            for unit in TimescaleUnit:
+                if timescale == unit.value:
+                    mag = TimescaleMagnitude(1)
+                    break
             else:
-                for num in sorted(cls.TIMESCALE_NUMS, reverse=True):
-                    num_str = str(num)
-                    if timescale.startswith(num_str):
-                        unit = timescale[len(num_str) :].lstrip(' ')
+                for mag in reversed(TimescaleMagnitude):
+                    mag_str = str(mag.value)
+                    if timescale.startswith(mag_str):
+                        unit_str = timescale[len(mag_str) :].lstrip(' ')
+                        unit = TimescaleUnit(unit_str)
                         break
                 else:
-                    raise ValueError('Invalid timescale num {}'.format(timescale))
+                    raise ValueError('Invalid timescale magnitude {}'.format(timescale))
         else:
             raise TypeError(
                 'Invalid timescale type {}'.format(type(timescale).__name__)
             )
-        if num not in cls.TIMESCALE_NUMS:
-            raise ValueError('Invalid timescale num {}'.format(num))
-        if unit not in cls.TIMESCALE_UNITS:
-            raise ValueError('Invalid timescale unit "{}"'.format(unit))
-        return '{} {}'.format(num, unit)
+        return '{} {}'.format(mag.value, unit.value)
 
     def __enter__(self) -> 'VCDWriter':
         return self
@@ -478,7 +495,7 @@ class VCDWriter:
                         scope_type = self._scope_types.get(
                             scope[: i + j + 1], self._default_scope_type
                         )
-                        yield '$scope {} {} $end'.format(scope_type, name)
+                        yield '$scope {} {} $end'.format(scope_type.value, name)
                     break
             else:
                 assert scope != prev_scope  # pragma no cover
@@ -515,7 +532,7 @@ class Variable(Generic[V]):
 
     __slots__ = ('ident', 'type', 'size', 'value')
 
-    def __init__(self, ident: str, type: str, size: VariableSize, init: V):
+    def __init__(self, ident: str, type: VarType, size: VariableSize, init: V):
         #: Identifier used in VCD output stream.
         self.ident = ident
         #: VCD variable type; one of :const:`VCDWriter.VAR_TYPES`.
