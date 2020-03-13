@@ -34,6 +34,10 @@ test:
 coverage:
 	pytest --cov
 
+.PHONY: benchmark
+benchmark:
+	pytest -vvs -k test_execution_speed
+
 .PHONY: docs
 docs:
 	$(MAKE) -C docs html
