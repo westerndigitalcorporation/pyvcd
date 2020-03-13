@@ -321,9 +321,19 @@ def test_vcd_register_real(capsys):
 def test_vcd_register_event(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_var('scope', 'a', 'event')
-    out = capsys.readouterr()[0]
-    assert '$var event 1 0 a $end' in out
-    assert 'z0' not in out
+        vcd.register_var('scope', 'b', 'event', init=True)
+    expected_last = [
+        '$scope module scope $end',
+        '$var event 1 0 a $end',
+        '$var event 1 1 b $end',
+        '$upscope $end',
+        '$enddefinitions $end',
+        '#0',
+        '$dumpvars',
+        '$end',
+    ]
+    lines = split_lines(capsys)
+    assert lines[-len(expected_last) :] == expected_last
 
 
 def test_vcd_bad_event():
@@ -368,6 +378,7 @@ def test_vcd_multiple_events(capsys):
 def test_vcd_scalar_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         v0 = vcd.register_var('aaa', 'nn0', 'integer', 1)
+        vcd.register_var('aaa', 'nn1', 'integer', 1, False)
         vcd.change(v0, 1, True)
         vcd.change(v0, 2, False)
         vcd.change(v0, 3, 'z')
@@ -378,13 +389,29 @@ def test_vcd_scalar_var(capsys):
             vcd.change(v0, 7, 'bogus')
         vcd.change(v0, 7, None)
     lines = split_lines(capsys)
-    assert lines[-13] == '10'
-    assert lines[-11] == '00'
-    assert lines[-9] == 'z0'
-    assert lines[-7] == 'x0'
-    assert lines[-5] == '00'
-    assert lines[-3] == '10'
-    assert lines[-1] == 'z0'
+    expected = [
+        '$enddefinitions $end',
+        '#0',
+        '$dumpvars',
+        'x0',
+        '01',
+        '$end',
+        '#1',
+        '10',
+        '#2',
+        '00',
+        '#3',
+        'z0',
+        '#4',
+        'x0',
+        '#5',
+        '00',
+        '#6',
+        '10',
+        '#7',
+        'z0',
+    ]
+    assert lines[-len(expected) :] == expected
 
 
 def test_vcd_real_var(capsys):
@@ -743,6 +770,7 @@ def test_dump_off_compound_vector(capsys):
 def test_vcd_string_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         v0 = vcd.register_var('aaa', 'nn0', 'string')
+        vcd.register_var('aaa', 'nn1', 'string', init='foobar')
         vcd.change(v0, 1, 'hello')
         vcd.change(v0, 2, '')
         vcd.change(v0, 3, 'world')
@@ -755,6 +783,7 @@ def test_vcd_string_var(capsys):
         '#0',
         '$dumpvars',
         's 0',
+        'sfoobar 1',
         '$end',
         '#1',
         'shello 0',

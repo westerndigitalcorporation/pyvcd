@@ -193,25 +193,25 @@ class VCDWriter:
             var_type=var_type, size=var_size, ident=ident, name=name
         )
 
-        if init is None:
-            if var_type == 'real':
-                init = 0.0
-            elif var_type == 'string':
-                init = ''
-            elif isinstance(size, tuple):
-                init = tuple('x' * len(size))
-            else:
-                init = 'x'
-
         if var_type == 'string':
+            if init is None:
+                init = ''
             var = StringVariable(ident, var_type, size, init)
         elif var_type == 'event':
+            if init is None:
+                init = True
             var = EventVariable(ident, var_type, size, init)
-        elif size == 1:
-            var = ScalarVariable(ident, var_type, size, init)
         elif var_type == 'real':
+            if init is None:
+                init = 0.0
             var = RealVariable(ident, var_type, size, init)
+        elif size == 1:
+            if init is None:
+                init = 'x'
+            var = ScalarVariable(ident, var_type, size, init)
         else:
+            if init is None:
+                init = 'x'
             var = VectorVariable(ident, var_type, size, init)
 
         var.format_value(init, check=True)
