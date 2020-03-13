@@ -708,6 +708,38 @@ def test_vector_tuple(size, value, expected):
     assert expected == var.format_value(value)
 
 
+def test_dump_off_compound_vector(capsys):
+    with VCDWriter(sys.stdout) as vcd:
+        v0 = vcd.register_var('aaa', 'n0', 'integer', size=(4, 4, 8), init=None)
+        vcd.change(v0, 1, (0, 0, 0))
+        vcd.change(v0, 2, (15, 0, 0xFF))
+        vcd.dump_off(3)
+        vcd.dump_on(4)
+    expected = [
+        '$var integer 16 0 n0 $end',
+        '$upscope $end',
+        '$enddefinitions $end',
+        '#0',
+        '$dumpvars',
+        'bx 0',
+        '$end',
+        '#1',
+        'b0 0',
+        '#2',
+        'b1111000011111111 0',
+        '#3',
+        '$dumpoff',
+        'bx 0',
+        '$end',
+        '#4',
+        '$dumpon',
+        'b1111000011111111 0',
+        '$end',
+    ]
+    lines = split_lines(capsys)
+    assert expected == lines[-len(expected) :]
+
+
 def test_vcd_string_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         v0 = vcd.register_var('aaa', 'nn0', 'string')
