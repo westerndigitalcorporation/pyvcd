@@ -5,19 +5,19 @@
 .. automodule:: vcd.writer
 
 .. autoclass:: VCDPhaseError
-    :members:
+   :members:
 
 .. autoclass:: VCDWriter
-    :members:
+   :members:
 
 .. autoclass:: Variable
-    :members:
+   :members:
 
 .. autoclass:: ScalarVariable
-    :members:
+   :members:
 
 .. autoclass:: RealVariable
-    :members:
+   :members:
 
 .. autoclass:: VectorVariable
-    :members:
+   :members:
