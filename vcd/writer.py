@@ -621,7 +621,7 @@ class VectorVariable(Variable):
             vstr_list = []
             vstr_len = 0
             size_sum = 0
-            for i, (v, size) in enumerate(zip(reversed(value), reversed(self.size))):
+            for v, size in zip(reversed(value), reversed(self.size)):
                 vstr = self._format_value(v, size, check)
                 if not vstr_list:
                     vstr_list.insert(0, vstr)
