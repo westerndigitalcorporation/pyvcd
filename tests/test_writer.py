@@ -6,7 +6,13 @@ import timeit
 
 import pytest
 
-from vcd.writer import Variable, VCDPhaseError, VCDWriter, VectorVariable
+from vcd.writer import (
+    CompoundVectorVariable,
+    Variable,
+    VCDPhaseError,
+    VCDWriter,
+    VectorVariable,
+)
 
 
 def split_lines(capsys):
@@ -730,8 +736,8 @@ def test_vector_var_3bit_invalid():
         ((8, 32), (0b1010, 0xFF00FF00), 'b101011111111000000001111111100000000 v'),
     ],
 )
-def test_vector_tuple(size, value, expected):
-    var = VectorVariable('v', 'integer', size, value)
+def test_compound_vector(size, value, expected):
+    var = CompoundVectorVariable('v', 'integer', size, value)
     assert expected == var.format_value(value)
 
 

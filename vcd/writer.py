@@ -209,12 +209,13 @@ class VCDWriter:
             if init is None:
                 init = 'x'
             var = ScalarVariable(ident, var_type, size, init)
+        elif isinstance(size, tuple):
+            if init is None:
+                init = tuple('x' * len(size))
+            var = CompoundVectorVariable(ident, var_type, size, init)
         else:
             if init is None:
-                if isinstance(size, tuple):
-                    init = tuple('x' * len(size))
-                else:
-                    init = 'x'
+                init = 'x'
             var = VectorVariable(ident, var_type, size, init)
 
         var.format_value(init, check=True)
@@ -618,64 +619,82 @@ class VectorVariable(Variable):
             produce invalid VCD streams with invalid string values.
 
         """
-        if isinstance(self.size, tuple):
-            if len(value) != len(self.size):
-                raise ValueError(
-                    'Compound value ({}) must be length {}'.format(
-                        value, len(self.size)
-                    )
-                )
-            # The string is built-up right-to-left in order to minimize/avoid
-            # left-extension in the final value string.
-            vstr_list = []
-            vstr_len = 0
-            size_sum = 0
-            for v, size in zip(reversed(value), reversed(self.size)):
-                vstr = self._format_value(v, size, check)
-                if not vstr_list:
-                    vstr_list.insert(0, vstr)
-                    vstr_len += len(vstr)
-                else:
-                    leftc = vstr_list[0][0]
-                    rightc = vstr[0]
-                    if len(vstr) > 1 or (
-                        (rightc != leftc or leftc == '1')
-                        and (rightc != '0' or leftc != '1')
-                    ):
-                        extendc = '0' if leftc == '1' else leftc
-                        extend_size = size_sum - vstr_len
-                        vstr_list.insert(0, extendc * extend_size)
-                        vstr_list.insert(0, vstr)
-                        vstr_len += extend_size + len(vstr)
-                size_sum += size
-            value_str = ''.join(vstr_list)
-        else:
-            value_str = self._format_value(value, self.size, check)
+        value_str = _format_scalar_value(value, self.size, check)
         return 'b{} {}'.format(value_str, self.ident)
 
-    def _format_value(self, value, size, check):
-        if isinstance(value, int):
-            max_val = 1 << size
-            if check and (-value > (max_val >> 1) or value >= max_val):
-                raise ValueError(
-                    'Value ({}) not representable in {} bits'.format(value, size)
-                )
-            if value < 0:
-                value += max_val
-            return format(value, 'b')
-        elif value is None:
-            return 'z'
-        else:
-            if check and (
-                not isinstance(value, str)
-                or len(value) > size
-                or any(c not in '01xzXZ-' for c in value)
-            ):
-                raise ValueError('Invalid vector value ({})'.format(value))
-            return value
+    def dump_off(self):
+        return self.format_value('x', check=False)
+
+
+class CompoundVectorVariable(Variable):
+    """Bit vector variable type with a compound size.
+
+    This is for the various non-scalar and non-real variable types including integer,
+    register, wire, etc.
+
+    """
+
+    __slots__ = ()
+
+    def format_value(self, value, check=True):
+        """Format value change for VCD stream.
+
+        :param value: Sequence of scalar components of the variable's value. The
+                      sequence must be the same length as the variable's size tuple.
+        :returns: string representing value change for use in a VCD stream.
+
+        """
+        if len(value) != len(self.size):
+            raise ValueError(
+                'Compound value ({}) must be length {}'.format(value, len(self.size))
+            )
+        # The string is built-up right-to-left in order to minimize/avoid left-extension
+        # in the final value string.
+        vstr_list = []
+        vstr_len = 0
+        size_sum = 0
+        for v, size in zip(reversed(value), reversed(self.size)):
+            vstr = _format_scalar_value(v, size, check)
+            if not vstr_list:
+                vstr_list.insert(0, vstr)
+                vstr_len += len(vstr)
+            else:
+                leftc = vstr_list[0][0]
+                rightc = vstr[0]
+                if len(vstr) > 1 or (
+                    (rightc != leftc or leftc == '1')
+                    and (rightc != '0' or leftc != '1')
+                ):
+                    extendc = '0' if leftc == '1' else leftc
+                    extend_size = size_sum - vstr_len
+                    vstr_list.insert(0, extendc * extend_size)
+                    vstr_list.insert(0, vstr)
+                    vstr_len += extend_size + len(vstr)
+            size_sum += size
+        value_str = ''.join(vstr_list)
+        return 'b{} {}'.format(value_str, self.ident)
 
     def dump_off(self):
-        if isinstance(self.size, tuple):
-            return self.format_value(tuple('x' * len(self.size)), check=False)
-        else:
-            return self.format_value('x', check=False)
+        return self.format_value(tuple('x' * len(self.size)), check=False)
+
+
+def _format_scalar_value(value, size, check):
+    if isinstance(value, int):
+        max_val = 1 << size
+        if check and (-value > (max_val >> 1) or value >= max_val):
+            raise ValueError(
+                'Value ({}) not representable in {} bits'.format(value, size)
+            )
+        if value < 0:
+            value += max_val
+        return format(value, 'b')
+    elif value is None:
+        return 'z'
+    else:
+        if check and (
+            not isinstance(value, str)
+            or len(value) > size
+            or any(c not in '01xzXZ-' for c in value)
+        ):
+            raise ValueError('Invalid vector value ({})'.format(value))
+        return value

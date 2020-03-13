@@ -21,3 +21,6 @@
 
 .. autoclass:: VectorVariable
    :members:
+
+.. autoclass:: CompoundVectorVariable
+   :members:
