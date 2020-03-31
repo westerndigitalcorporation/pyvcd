@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import Enum
 from itertools import zip_longest
 from numbers import Number
+from types import TracebackType
 from typing import (
     IO,
     Dict,
@@ -17,6 +18,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
@@ -122,7 +124,7 @@ class VCDWriter:
 
     def __init__(
         self,
-        file: IO,
+        file: IO[str],
         timescale: Timescale = '1 us',
         date: Optional[str] = None,
         comment: str = '',
@@ -131,7 +133,7 @@ class VCDWriter:
         scope_sep: str = '.',
         check_values: bool = True,
         init_timestamp: TimeValue = 0,
-    ):
+    ) -> None:
         self._ofile = file
         self._header_keywords = {
             '$timescale': self._check_timescale(timescale),
@@ -179,7 +181,7 @@ class VCDWriter:
         size: Optional[VariableSize] = None,
         init: VarValue = None,
         ident: str = None,
-    ):
+    ) -> 'Variable':
         """Register a VCD variable and return function to change value.
 
         All VCD variables must be registered prior to any value changes.
@@ -254,26 +256,42 @@ class VCDWriter:
         if var_type == VarType.string:
             if init is None:
                 init = ''
+            elif not isinstance(init, str):
+                raise ValueError('string init value must be str')
             var = StringVariable(ident, var_type, size, init)
         elif var_type == VarType.event:
             if init is None:
                 init = True
+            elif not isinstance(init, (bool, int)):
+                raise ValueError('event init value must be int, bool, or None')
             var = EventVariable(ident, var_type, size, init)
         elif var_type == VarType.real:
             if init is None:
                 init = 0.0
+            elif not isinstance(init, (float, int)):
+                raise ValueError('real init value must be float, int, or None')
             var = RealVariable(ident, var_type, size, init)
         elif size == 1:
             if init is None:
                 init = 'x'
+            elif not isinstance(init, (int, bool, str)):
+                raise ValueError('scalar init value must be int, bool, str, or None')
             var = ScalarVariable(ident, var_type, size, init)
         elif isinstance(size, tuple):
             if init is None:
                 init = tuple('x' * len(size))
+            elif not isinstance(init, Sequence):
+                raise ValueError('compount init value must be a sequence')
+            elif len(init) != len(size):
+                raise ValueError('compound init value must be same length as size')
+            elif not all(isinstance(v, (int, bool, str)) for v in init):
+                raise ValueError('compound init values must be int, bool, or str')
             var = CompoundVectorVariable(ident, var_type, size, init)
         else:
             if init is None:
                 init = 'x'
+            elif not isinstance(init, (int, bool, str)):
+                raise ValueError('vector init value must be int, bool, str, or None')
             var = VectorVariable(ident, var_type, size, init)
 
         var.format_value(init, check=True)
@@ -430,7 +448,12 @@ class VCDWriter:
     def __enter__(self) -> 'VCDWriter':
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[Exception]],
+        exc_value: Optional[Exception],
+        traceback: Optional[TracebackType],
+    ) -> None:
         self.close()
 
     def close(self, timestamp: Optional[TimeValue] = None) -> None:
@@ -524,15 +547,15 @@ class VCDWriter:
         self._scope_var_names.clear()
 
 
-V = TypeVar('V')
+ValueType = TypeVar('ValueType')
 
 
-class Variable(Generic[V]):
+class Variable(Generic[ValueType]):
     """VCD variable details needed to call :meth:`VCDWriter.change()`."""
 
     __slots__ = ('ident', 'type', 'size', 'value')
 
-    def __init__(self, ident: str, type: VarType, size: VariableSize, init: V):
+    def __init__(self, ident: str, type: VarType, size: VariableSize, init: ValueType):
         #: Identifier used in VCD output stream.
         self.ident = ident
         #: VCD variable type; one of :const:`VCDWriter.VAR_TYPES`.
@@ -542,7 +565,7 @@ class Variable(Generic[V]):
         #: Last value of variable.
         self.value = init
 
-    def format_value(self, value: V, check: bool = True) -> str:
+    def format_value(self, value: ValueType, check: bool = True) -> str:
         """Format value change for use in VCD stream."""
         raise NotImplementedError
 
@@ -553,7 +576,7 @@ class Variable(Generic[V]):
         return None
 
 
-class ScalarVariable(Variable):
+class ScalarVariable(Variable[ScalarValue]):
     """One-bit VCD scalar.
 
     This is a 4-state variable and thus may have values of 0, 1, 'z', or 'x'.
@@ -586,18 +609,18 @@ class ScalarVariable(Variable):
         return 'x' + self.ident
 
 
-class EventVariable(Variable):
-    def format_value(self, value: EventValue, check=True) -> str:
+class EventVariable(Variable[EventValue]):
+    def format_value(self, value: EventValue, check: bool = True) -> str:
         if value:
             return '1' + self.ident
         else:
             raise ValueError('invalid event value')
 
-    def dump(self, check=True) -> Optional[str]:
+    def dump(self, check: bool = True) -> Optional[str]:
         return None
 
 
-class StringVariable(Variable):
+class StringVariable(Variable[StringValue]):
     """String variable as known by GTKWave.
 
     Any "string" (character-chain) can be displayed as a change. This type is only
@@ -624,7 +647,7 @@ class StringVariable(Variable):
         return 's{} {}'.format(value, self.ident)
 
 
-class RealVariable(Variable):
+class RealVariable(Variable[RealValue]):
     """Real (IEEE-754 double-precision floating point) variable.
 
     Values must be numeric and cannot be 'x' or 'z' states.
@@ -648,7 +671,7 @@ class RealVariable(Variable):
             raise ValueError('Invalid real value ({})'.format(value))
 
 
-class VectorVariable(Variable):
+class VectorVariable(Variable[ScalarValue]):
     """Bit vector variable type.
 
     This is for the various non-scalar and non-real variable types including integer,
@@ -684,7 +707,7 @@ class VectorVariable(Variable):
         return self.format_value('x', check=False)
 
 
-class CompoundVectorVariable(Variable):
+class CompoundVectorVariable(Variable[CompoundValue]):
     """Bit vector variable type with a compound size.
 
     This is for the various non-scalar and non-real variable types including integer,

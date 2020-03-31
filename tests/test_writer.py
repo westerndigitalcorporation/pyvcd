@@ -131,6 +131,14 @@ def test_vcd_one_var(capsys):
     assert lines[-1] == 'b1010 foo'
 
 
+def test_vcd_invalid_vector_init():
+    with VCDWriter(sys.stdout) as vcd:
+        with pytest.raises(ValueError):
+            vcd.register_var('scope', 'a', 'integer', 8, init='eight')
+        with pytest.raises(ValueError):
+            vcd.register_var('scope', 'b', 'integer', 8, init=8.0)
+
+
 def test_vcd_no_duplicates(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         var = vcd.register_var('sss', 'nnn', 'integer', 32, ident='foo')
@@ -319,18 +327,56 @@ def test_vcd_register_int_tuple(capsys):
     assert 'bx 0' in out
 
 
+def test_vcd_register_int_tuple_invalid_init_type():
+    with VCDWriter(sys.stdout, date='') as vcd:
+        with pytest.raises(ValueError):
+            vcd.register_var('scope', 'a', 'integer', (8, 4, 1), 0)
+
+
+def test_vcd_register_int_tuple_invalid_init_len():
+    with VCDWriter(sys.stdout, date='') as vcd:
+        with pytest.raises(ValueError):
+            vcd.register_var('scope', 'a', 'integer', (8, 4, 1), (0, 0, 0, 0))
+
+
+def test_vcd_register_int_tuple_invalid_init_values():
+    with VCDWriter(sys.stdout, date='') as vcd:
+        with pytest.raises(ValueError):
+            vcd.register_var('scope', 'a', 'integer', (8, 4, 1), (1.0, 0, 0))
+
+
 def test_vcd_register_real(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_var('scope', 'a', 'real')
-    out = capsys.readouterr()[0]
-    assert '$var real 64 0 a $end' in out
-    assert 'r0' in out
+        vcd.register_var('scope', 'b', 'real', init=123)
+        vcd.register_var('scope', 'c', 'real', init=1.23)
+        with pytest.raises(ValueError):
+            vcd.register_var('scope', 'f', 'real', init='real')
+
+    expected_last = [
+        '$scope module scope $end',
+        '$var real 64 0 a $end',
+        '$var real 64 1 b $end',
+        '$var real 64 2 c $end',
+        '$upscope $end',
+        '$enddefinitions $end',
+        '#0',
+        '$dumpvars',
+        'r0 0',
+        'r123 1',
+        'r1.23 2',
+        '$end',
+    ]
+    lines = split_lines(capsys)
+    assert lines[-len(expected_last) :] == expected_last
 
 
 def test_vcd_register_event(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_var('scope', 'a', 'event')
         vcd.register_var('scope', 'b', 'event', init=True)
+        with pytest.raises(ValueError):
+            vcd.register_var('scope', 'f', 'event', init='yes')
     expected_last = [
         '$scope module scope $end',
         '$var event 1 0 a $end',
@@ -388,6 +434,8 @@ def test_vcd_scalar_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         v0 = vcd.register_var('aaa', 'nn0', 'integer', 1)
         vcd.register_var('aaa', 'nn1', 'integer', 1, False)
+        with pytest.raises(ValueError):
+            vcd.register_var('aaa', 'fff', 'integer', 1, init=1.23)
         vcd.change(v0, 1, True)
         vcd.change(v0, 2, False)
         vcd.change(v0, 3, 'z')
@@ -744,6 +792,15 @@ def test_compound_vector(size, value, expected):
     assert expected == var.format_value(value)
 
 
+@pytest.mark.parametrize(
+    'size, value', [((1, 2, 3), (0, 0)), ((1, 2, 3), (0, 0, 0, 0)), ((1,), (0, 0))]
+)
+def test_compound_vector_invalid_values(size, value):
+    var = CompoundVectorVariable('v', 'integer', size, None)
+    with pytest.raises(ValueError):
+        var.format_value(value)
+
+
 def test_dump_off_compound_vector(capsys):
     with VCDWriter(sys.stdout) as vcd:
         v0 = vcd.register_var('aaa', 'n0', 'integer', size=(4, 4, 8), init=None)
@@ -798,6 +855,8 @@ def test_vcd_string_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         v0 = vcd.register_var('aaa', 'nn0', 'string')
         vcd.register_var('aaa', 'nn1', 'string', init='foobar')
+        with pytest.raises(ValueError):
+            vcd.register_var('aaa', 'fff', 'string', init=123)
         vcd.change(v0, 1, 'hello')
         vcd.change(v0, 2, '')
         vcd.change(v0, 3, 'world')

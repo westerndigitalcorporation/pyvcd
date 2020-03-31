@@ -42,7 +42,7 @@ class GTKWSave:
 
     """
 
-    def __init__(self, savefile: IO):
+    def __init__(self, savefile: IO[str]) -> None:
         self.file = savefile
         self.path = getattr(savefile, 'name', None)
         self._flags = 0
@@ -50,7 +50,7 @@ class GTKWSave:
         self._filter_files: List[str] = []
         self._filter_procs: List[str] = []
 
-    def _p(self, *args, **kwargs) -> None:
+    def _p(self, *args: object, **kwargs) -> None:
         print(*args, file=self.file, **kwargs)
 
     def _set_flags(self, flags: int) -> None:
