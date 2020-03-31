@@ -610,6 +610,12 @@ class ScalarVariable(Variable[ScalarValue]):
 
 
 class EventVariable(Variable[EventValue]):
+    """VCD event variable.
+
+    An event is transient--it only exists at the time it is changed.
+
+    """
+
     def format_value(self, value: EventValue, check: bool = True) -> str:
         if value:
             return '1' + self.ident
