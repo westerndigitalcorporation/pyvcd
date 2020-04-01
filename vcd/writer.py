@@ -229,9 +229,7 @@ class VCDWriter:
         scope_names = self._scope_var_names.setdefault(scope_tuple, set())
         if name in scope_names:
             raise KeyError(
-                'Duplicate var {} in scope {}'.format(
-                    name, self._scope_sep.join(scope_tuple)
-                )
+                f'Duplicate var {name} in scope {self._scope_sep.join(scope_tuple)}'
             )
 
         if ident is None:
@@ -243,7 +241,7 @@ class VCDWriter:
             elif var_type in [VarType.event, VarType.string]:
                 size = 1
             else:
-                raise ValueError('Must supply size for {} var_type'.format(var_type))
+                raise ValueError(f'Must supply size for {var_type} var_type')
 
         if isinstance(size, Sequence):
             size = tuple(size)
@@ -251,9 +249,7 @@ class VCDWriter:
         else:
             var_size = size
 
-        var_str = '$var {var_type} {size} {ident} {name} $end'.format(
-            var_type=var_type, size=var_size, ident=ident, name=name
-        )
+        var_str = f'$var {var_type} {var_size} {ident} {name} $end'
 
         var: Variable
         if var_type == VarType.string:
@@ -344,7 +340,7 @@ class VCDWriter:
 
     def _set_timestamp(self, timestamp: TimeValue) -> None:
         if timestamp < self._timestamp:
-            raise VCDPhaseError('Out of order timestamp: {}'.format(timestamp))
+            raise VCDPhaseError(f'Out of order timestamp: {timestamp}')
         elif timestamp > self._timestamp:
             self._timestamp = int(timestamp)
 
@@ -353,7 +349,7 @@ class VCDWriter:
             self._last_dumped_ts is None
         ):
             self._last_dumped_ts = self._timestamp
-            self._ofile.write('#{}\n'.format(self._timestamp))
+            self._ofile.write(f'#{self._timestamp}\n')
 
     def change(self, var: 'Variable', timestamp: TimeValue, value: VarValue) -> None:
         """Change variable's value in VCD stream.
@@ -394,7 +390,7 @@ class VCDWriter:
 
         # Unroll for performance: self._set_timestamp(timestamp)
         if timestamp < self._timestamp:
-            raise VCDPhaseError('Out of order timestamp: {}'.format(timestamp))
+            raise VCDPhaseError(f'Out of order timestamp: {timestamp}')
         elif timestamp > self._timestamp:
             if self._registering:
                 self._finalize_registration()
@@ -408,9 +404,9 @@ class VCDWriter:
             # Unroll for performance: self._dump_timestamp()
             if self._timestamp != self._last_dumped_ts:
                 self._last_dumped_ts = self._timestamp
-                self._ofile.write('#{}\n{}\n'.format(self._timestamp, val_str))
+                self._ofile.write(f'#{self._timestamp}\n{val_str}\n')
             else:
-                self._ofile.write(val_str + '\n')
+                self._ofile.write(f'{val_str}\n')
 
     def _get_scope_tuple(self, scope: ScopeInput) -> ScopeTuple:
         if isinstance(scope, str):
@@ -418,7 +414,7 @@ class VCDWriter:
         if isinstance(scope, Sequence):
             return tuple(scope)
         else:
-            raise TypeError('Invalid scope {}'.format(scope))
+            raise TypeError(f'Invalid scope {scope}')
 
     @classmethod
     def _check_timescale(cls, timescale: Timescale) -> str:
@@ -427,7 +423,7 @@ class VCDWriter:
                 mag = TimescaleMagnitude(timescale[0])
                 unit = TimescaleUnit(timescale[1])
             else:
-                raise ValueError('Invalid timescale {}'.format(timescale))
+                raise ValueError(f'Invalid timescale {timescale}')
         elif isinstance(timescale, str):
             for unit in TimescaleUnit:
                 if timescale == unit.value:
@@ -441,12 +437,10 @@ class VCDWriter:
                         unit = TimescaleUnit(unit_str)
                         break
                 else:
-                    raise ValueError('Invalid timescale magnitude {}'.format(timescale))
+                    raise ValueError(f'Invalid timescale magnitude {timescale}')
         else:
-            raise TypeError(
-                'Invalid timescale type {}'.format(type(timescale).__name__)
-            )
-        return '{} {}'.format(mag.value, unit.value)
+            raise TypeError(f'Invalid timescale type {type(timescale).__name__}')
+        return f'{mag.value} {unit.value}'
 
     def __enter__(self) -> 'VCDWriter':
         return self
@@ -501,7 +495,7 @@ class VCDWriter:
                 continue
             lines = kwvalue.split('\n')
             if len(lines) == 1:
-                yield '{} {} $end'.format(kwname, lines[0])
+                yield f'{kwname} {lines[0]} $end'
             else:
                 yield kwname
                 for line in lines:
@@ -521,7 +515,7 @@ class VCDWriter:
                         scope_type = self._scope_types.get(
                             scope[: i + j + 1], self._default_scope_type
                         )
-                        yield '$scope {} {} $end'.format(scope_type.value, name)
+                        yield f'$scope {scope_type.value} {name} $end'
                     break
             else:
                 assert scope != prev_scope  # pragma no cover
@@ -599,7 +593,7 @@ class ScalarVariable(Variable[ScalarValue]):
         """
         if isinstance(value, str):
             if check and (len(value) != 1 or value not in '01xzXZ'):
-                raise ValueError('Invalid scalar value ({})'.format(value))
+                raise ValueError(f'Invalid scalar value ({value})')
             return value + self.ident
         elif value is None:
             return 'z' + self.ident
@@ -651,9 +645,9 @@ class StringVariable(Variable[StringValue]):
         if value is None:
             value = ''
         if check and (not isinstance(value, str) or ' ' in value):
-            raise ValueError('Invalid string value ({})'.format(value))
+            raise ValueError(f'Invalid string value ({value})')
 
-        return 's{} {}'.format(value, self.ident)
+        return f's{value} {self.ident}'
 
 
 class RealVariable(Variable[RealValue]):
@@ -675,9 +669,9 @@ class RealVariable(Variable[RealValue]):
 
         """
         if not check or isinstance(value, Number):
-            return 'r{:.16g} {}'.format(value, self.ident)
+            return f'r{value:.16g} {self.ident}'
         else:
-            raise ValueError('Invalid real value ({})'.format(value))
+            raise ValueError(f'Invalid real value ({value})')
 
 
 class VectorVariable(Variable[ScalarValue]):
@@ -710,7 +704,7 @@ class VectorVariable(Variable[ScalarValue]):
 
         """
         value_str = _format_scalar_value(value, self.size, check)
-        return 'b{} {}'.format(value_str, self.ident)
+        return f'b{value_str} {self.ident}'
 
     def dump_off(self) -> str:
         return self.format_value('x', check=False)
@@ -738,7 +732,7 @@ class CompoundVectorVariable(Variable[CompoundValue]):
         """
         if len(value) != len(self.size):
             raise ValueError(
-                'Compound value ({}) must be length {}'.format(value, len(self.size))
+                f'Compound value ({value}) must be length {len(self.size)}'
             )
         # The string is built-up right-to-left in order to minimize/avoid left-extension
         # in the final value string.
@@ -764,7 +758,7 @@ class CompoundVectorVariable(Variable[CompoundValue]):
                     vstr_len += extend_size + len(vstr)
             size_sum += size
         value_str = ''.join(vstr_list)
-        return 'b{} {}'.format(value_str, self.ident)
+        return f'b{value_str} {self.ident}'
 
     def dump_off(self) -> str:
         return self.format_value(tuple('x' * len(self.size)), check=False)
@@ -774,9 +768,7 @@ def _format_scalar_value(value: ScalarValue, size: int, check: bool) -> str:
     if isinstance(value, int):
         max_val = 1 << size
         if check and (-value > (max_val >> 1) or value >= max_val):
-            raise ValueError(
-                'Value ({}) not representable in {} bits'.format(value, size)
-            )
+            raise ValueError(f'Value ({value}) not representable in {size} bits')
         if value < 0:
             value += max_val
         return format(value, 'b')
@@ -788,5 +780,5 @@ def _format_scalar_value(value: ScalarValue, size: int, check: bool) -> str:
             or len(value) > size
             or any(c not in '01xzXZ-' for c in value)
         ):
-            raise ValueError('Invalid vector value ({})'.format(value))
+            raise ValueError(f'Invalid vector value ({value})')
         return value

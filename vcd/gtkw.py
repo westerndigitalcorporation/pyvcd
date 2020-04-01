@@ -55,7 +55,7 @@ class GTKWSave:
 
     def _set_flags(self, flags: int) -> None:
         if flags != self._flags:
-            self._p('@{:x}'.format(flags))
+            self._p(f'@{flags:x}')
             self._flags = flags
 
     def _set_color(self, color: Optional[Union[str, int]]) -> None:
@@ -66,7 +66,7 @@ class GTKWSave:
                 self._color_stack[-1] = (self._color_stack[-1] + 1) % 8
             else:
                 self._color_stack[-1] = color
-            self._p('[color] {}'.format(self._color_stack[-1]))
+            self._p(f'[color] {self._color_stack[-1]}')
 
     def _set_translate_filter_file(self, filter_path: Optional[str]) -> None:
         if filter_path:
@@ -75,7 +75,7 @@ class GTKWSave:
             except ValueError:
                 self._filter_files.append(filter_path)
                 filter_id = len(self._filter_files)
-            self._p('^{} {}'.format(filter_id, filter_path))
+            self._p(f'^{filter_id} {filter_path}')
 
     def _set_translate_filter_proc(self, proc_path: Optional[str]) -> None:
         if proc_path:
@@ -84,7 +84,7 @@ class GTKWSave:
             except ValueError:
                 self._filter_procs.append(proc_path)
                 filter_id = len(self._filter_procs)
-            self._p('^>{} {}'.format(filter_id, proc_path))
+            self._p(f'^>{filter_id} {proc_path}')
 
     def comment(self, *comments: Sequence[str]) -> None:
         """Add comment line(s) to save file."""
@@ -114,7 +114,7 @@ class GTKWSave:
         else:
             if abspath:
                 dump_path = os.path.abspath(dump_path)
-            self._p('[dumpfile] "{}"'.format(dump_path))
+            self._p(f'[dumpfile] "{dump_path}"')
 
     def dumpfile_mtime(
         self,
@@ -137,8 +137,8 @@ class GTKWSave:
         elif isinstance(mtime, datetime.datetime):
             mtime_str = mtime.strftime(time_format)
         else:
-            raise TypeError('Invalid mtime type ({})'.format(type(mtime)))
-        self._p('[dumpfile_mtime] "{}"'.format(mtime_str))
+            raise TypeError(f'Invalid mtime type ({type(mtime)})')
+        self._p(f'[dumpfile_mtime] "{mtime_str}"')
 
     def dumpfile_size(
         self, size: Optional[int] = None, dump_path: Optional[str] = None
@@ -151,7 +151,7 @@ class GTKWSave:
         if size is None:
             assert isinstance(dump_path, str)
             size = os.stat(dump_path).st_size
-        self._p('[dumpfile_size] {}'.format(size))
+        self._p(f'[dumpfile_size] {size}')
 
     def savefile(self, save_path: Optional[str] = None, abspath: bool = True) -> None:
         """Add the path of the save file to the save file.
@@ -171,28 +171,28 @@ class GTKWSave:
                 save_path = self.path
             if abspath and save_path is not None:
                 save_path = os.path.abspath(save_path)
-            self._p('[savefile] "{}"'.format(save_path))
+            self._p(f'[savefile] "{save_path}"')
 
     def timestart(self, timestamp: int = 0) -> None:
         """Add simulation start time to the save file."""
-        self._p('[timestart] {}'.format(timestamp))
+        self._p(f'[timestart] {timestamp}')
 
     def zoom_markers(
         self, zoom: float = 0.0, marker: int = -1, **kwargs: Dict[str, int]
     ) -> None:
         """Set zoom, primary marker, and markers 'a' - 'z'."""
         self._p(
-            '*{:.6f} {}'.format(zoom, marker),
+            f'*{zoom:.6f} {marker}',
             *[kwargs.get(k, -1) for k in 'abcdefghijklmnopqrstuvwxyz'],
         )
 
     def size(self, width: int, height: int) -> None:
         """Set GTKWave window size."""
-        self._p('[size] {} {}'.format(width, height))
+        self._p(f'[size] {width} {height}')
 
     def pos(self, x: int = -1, y: int = -1) -> None:
         """Set GTKWave window position."""
-        self._p('[pos] {} {}'.format(x, y))
+        self._p(f'[pos] {x} {y}')
 
     def treeopen(self, tree: str) -> None:
         """Start with *tree* open in Signal Search Tree (SST).
@@ -204,21 +204,21 @@ class GTKWSave:
 
         """
         if tree[-1] == '.':
-            self._p('[treeopen] {}'.format(tree))
+            self._p(f'[treeopen] {tree}')
         else:
-            self._p('[treeopen] {}.'.format(tree))
+            self._p(f'[treeopen] {tree}.')
 
     def signals_width(self, width: int) -> None:
         """Set width of Signals frame."""
-        self._p('[signals_width] {}'.format(width))
+        self._p(f'[signals_width] {width}')
 
     def sst_expanded(self, is_expanded: bool) -> None:
         """Set whether Signal Search Tree (SST) frame is expanded."""
-        self._p('[sst_expanded] {}'.format(int(bool(is_expanded))))
+        self._p(f'[sst_expanded] {int(bool(is_expanded))}')
 
     def pattern_trace(self, is_enabled: bool) -> None:
         """Enable/disable pattern trace."""
-        self._p('[pattern_trace] {}'.format(int(bool(is_enabled))))
+        self._p(f'[pattern_trace] {int(bool(is_enabled))}')
 
     @contextmanager
     def group(
@@ -264,7 +264,7 @@ class GTKWSave:
         if highlight:
             flags.append('highlight')
         self._set_flags(encode_flags(flags))
-        self._p('-{}'.format(name))
+        self._p(f'-{name}')
         self._color_stack.append(0)
 
     def end_group(
@@ -286,7 +286,7 @@ class GTKWSave:
         if highlight:
             flags.append('highlight')
         self._set_flags(encode_flags(flags))
-        self._p('-{}'.format(name))
+        self._p(f'-{name}')
         self._color_stack.pop(-1)
 
     def blank(
@@ -306,7 +306,7 @@ class GTKWSave:
         if highlight:
             flags.append('highlight')
         self._set_flags(encode_flags(flags))
-        self._p('-' + label)
+        self._p(f'-{label}')
 
     def trace(
         self,
@@ -343,7 +343,7 @@ class GTKWSave:
 
         """
         if datafmt not in ['hex', 'dec', 'bin', 'oct', 'ascii', 'real', 'signed']:
-            raise ValueError('Invalid datafmt ({})'.format(datafmt))
+            raise ValueError(f'Invalid datafmt ({datafmt})')
         flags = [datafmt]
         if extraflags:
             flags.extend(extraflags)
@@ -360,7 +360,7 @@ class GTKWSave:
         self._set_translate_filter_file(translate_filter_file)
         self._set_translate_filter_proc(translate_filter_proc)
         if alias:
-            self._p('+{{{}}} '.format(alias), end='')
+            self._p(f'+{{{alias}}} ', end='')
         self._p(name)
 
     @contextmanager
@@ -446,8 +446,8 @@ class GTKWSave:
         """
         self._set_color(color)
         if alias:
-            self._p('+{{{}}} '.format(alias), end='')
-        self._p('({}){}'.format(index, name))
+            self._p(f'+{{{alias}}} ', end='')
+        self._p(f'({index}){name}')
 
 
 TranslationType = Union[
@@ -481,15 +481,15 @@ def make_translation_filter(
     """
     if datafmt == "hex":
         assert isinstance(size, int)
-        value_format = '0{}x'.format(int(math.ceil(size / 4)))
+        value_format = f'0{int(math.ceil(size / 4))}x'
     elif datafmt == 'oct':
         assert isinstance(size, int)
-        value_format = '0{}o'.format(int(math.ceil(size / 3)))
+        value_format = f'0{int(math.ceil(size / 3))}o'
     elif datafmt in ['dec', 'signed']:
         value_format = 'd'
     elif datafmt == 'bin':
         assert isinstance(size, int)
-        value_format = '0{}b'.format(size)
+        value_format = f'0{size}b'
     elif datafmt == 'real':
         value_format = '.16g'
     elif datafmt == 'ascii':
@@ -501,15 +501,13 @@ def make_translation_filter(
             if isinstance(value, int):
                 value = bytes((value,)).decode('ascii')
             elif not isinstance(value, str):
-                raise TypeError(
-                    "Invalid type ({}) for ascii translation".format(type(value))
-                )
+                raise TypeError(f'Invalid type ({type(value)}) for ascii translation')
             elif len(value) != 1:
-                raise ValueError("Invalid ascii string '{}'".format(value))
+                raise ValueError(f'Invalid ascii string "{value}"')
             ascii_translations.append(tuple([value] + rest))
         translations = ascii_translations
     else:
-        raise ValueError('invalid datafmt ({})'.format(datafmt))
+        raise ValueError(f'invalid datafmt ({datafmt})')
 
     lines = []
 
@@ -524,9 +522,7 @@ def make_translation_filter(
             assert isinstance(size, int)
             max_val = 1 << size
             if -value > (max_val >> 1) or value >= max_val:
-                raise ValueError(
-                    'Value ({}) not representable in {} bits'.format(value, size)
-                )
+                raise ValueError(f'Value ({value}) not representable in {size} bits')
             if value < 0:
                 # Two's compliment treatment
                 value += 1 << size
@@ -534,9 +530,9 @@ def make_translation_filter(
         value_str = format(value, value_format)
 
         if color is None:
-            lines.append('{} {}'.format(value_str, label))
+            lines.append(f'{value_str} {label}')
         else:
-            lines.append('{} ?{}?{}'.format(value_str, color, label))
+            lines.append(f'{value_str} ?{color}?{label}')
 
     return '\n'.join(lines)
 
