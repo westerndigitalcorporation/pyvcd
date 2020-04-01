@@ -183,19 +183,10 @@ class VCDWriter:
         var_type: Union[VarType, str],
         size: Optional[VariableSize] = None,
         init: VarValue = None,
-        ident: str = None,
     ) -> 'Variable':
         """Register a VCD variable and return function to change value.
 
         All VCD variables must be registered prior to any value changes.
-
-        .. Note::
-
-            The variable `name` differs from the variable's `ident` (identifier). The
-            `name` (also known as `ref`) is meant to refer to the variable name in the
-            code being traced and is visible in VCD viewer applications. The `ident`,
-            however, is only used within the VCD file and can be auto-generated (by
-            specifying ``ident=None``) for most applications.
 
         :param scope: The hierarchical scope that the variable belongs within.
         :type scope: str or sequence of str
@@ -210,7 +201,6 @@ class VCDWriter:
             for those variable types.
         :type size: int or tuple(int) or None
         :param init: Optional initial value; defaults to 'x'.
-        :param str ident: Optional identifier for use in the VCD stream.
         :raises VCDPhaseError: if any values have been changed
         :raises ValueError: for invalid var_type value
         :raises TypeError: for invalid parameter types
@@ -232,9 +222,6 @@ class VCDWriter:
                 f'Duplicate var {name} in scope {self._scope_sep.join(scope_tuple)}'
             )
 
-        if ident is None:
-            ident = _encode_identifier(self._next_var_id)
-
         if size is None:
             if var_type in [VarType.integer, VarType.real, VarType.realtime]:
                 size = 64
@@ -248,6 +235,8 @@ class VCDWriter:
             var_size = sum(size)
         else:
             var_size = size
+
+        ident = _encode_identifier(self._next_var_id)
 
         var_str = f'$var {var_type} {var_size} {ident} {name} $end'
 
@@ -294,9 +283,9 @@ class VCDWriter:
             var = VectorVariable(ident, var_type, size, init)
 
         var.format_value(init, check=True)
-        self._vars.append(var)
 
-        # Only alter state after change_func() succeeds
+        # Only alter state after format_value() succeeds
+        self._vars.append(var)
         self._next_var_id += 1
         self._scope_var_strs.setdefault(scope_tuple, []).append(var_str)
         scope_names.add(name)

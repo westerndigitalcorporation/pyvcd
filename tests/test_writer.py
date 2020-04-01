@@ -123,12 +123,12 @@ def test_vcd_no_scopes(capsys):
 
 def test_vcd_one_var(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        var = vcd.register_var('sss', 'nnn', 'integer', 32, ident='foo')
+        var = vcd.register_var('sss', 'nnn', 'integer', 32)
         vcd.change(var, 0, 0)
         vcd.change(var, 1, 10)
     lines = split_lines(capsys)
-    assert '$var integer 32 foo nnn $end' in lines
-    assert lines[-1] == 'b1010 foo'
+    assert '$var integer 32 ! nnn $end' in lines
+    assert lines[-1] == 'b1010 !'
 
 
 def test_vcd_invalid_vector_init():
@@ -141,7 +141,7 @@ def test_vcd_invalid_vector_init():
 
 def test_vcd_no_duplicates(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
-        var = vcd.register_var('sss', 'nnn', 'integer', 32, ident='foo')
+        var = vcd.register_var('sss', 'nnn', 'integer', 32)
         vcd.change(var, 0, 'x')
         vcd.change(var, 1, 10)
         vcd.change(var, 2, 10)
@@ -153,19 +153,19 @@ def test_vcd_no_duplicates(capsys):
         '$date today $end',
         '$timescale 1 us $end',
         '$scope module sss $end',
-        '$var integer 32 foo nnn $end',
+        '$var integer 32 ! nnn $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
-        'bx foo',
+        'bx !',
         '$end',
         '#1',
-        'b1010 foo',
+        'b1010 !',
         '#4',
-        'b1111 foo',
+        'b1111 !',
         '#6',
-        'b1010 foo',
+        'b1010 !',
     ]
 
 
