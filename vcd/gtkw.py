@@ -12,7 +12,7 @@ __ http://gtkwave.sourceforge.net
 
 """
 from contextlib import contextmanager
-from enum import Flag, auto
+from enum import Enum, Flag, auto
 from typing import IO, Any, Dict, Generator, List, Optional, Sequence, Tuple, Union
 import datetime
 import math
@@ -57,6 +57,28 @@ class GTKWFlag(Flag):
     fpdecshift = auto()
 
 
+class GTKWColor(Enum):
+    """The colors used by GTKWave.
+
+    The `cycle` color is special and indicates the GTKWave should cycle through this
+    list of colors, starting from the last selected color.
+
+    """
+
+    cycle = -1
+    normal = 0
+    red = 1
+    orange = 2
+    yellow = 3
+    green = 4
+    blue = 5
+    indigo = 6
+    violet = 7
+
+    def _cycle(self):
+        return GTKWColor((self.value + 1) % 8)
+
+
 class GTKWSave:
     """Write GTKWave save files.
 
@@ -82,7 +104,7 @@ class GTKWSave:
         self.file = savefile
         self.path = getattr(savefile, 'name', None)
         self._flags = GTKWFlag(0)
-        self._color_stack = [0]
+        self._color_stack = [GTKWColor.normal]
         self._filter_files: List[str] = []
         self._filter_procs: List[str] = []
 
@@ -94,15 +116,27 @@ class GTKWSave:
             self._p(f'@{flags.value:x}')
             self._flags = flags
 
-    def _set_color(self, color: Optional[Union[str, int]]) -> None:
+    def _set_color(self, color: Optional[Union[GTKWColor, str, int]]) -> None:
         if color is not None:
-            if isinstance(color, str):
-                color = color_map[color]
-            if color == -1:
-                self._color_stack[-1] = (self._color_stack[-1] + 1) % 8
+            if not isinstance(color, GTKWColor):
+                warnings.warn(
+                    'Using str and int for colors is deprecated. '
+                    'Use vcd.gtkw.GTKWColor instead.',
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                if isinstance(color, str):
+                    color = GTKWColor.__members__[color]
+                else:
+                    assert isinstance(color, int)
+                    color = GTKWColor(color)
+                assert isinstance(color, GTKWColor)
+
+            if color == GTKWColor.cycle:
+                self._color_stack[-1] = self._color_stack[-1]._cycle()
             else:
                 self._color_stack[-1] = color
-            self._p(f'[color] {self._color_stack[-1]}')
+            self._p(f'[color] {self._color_stack[-1].value}')
 
     def _set_translate_filter_file(self, filter_path: Optional[str]) -> None:
         if filter_path:
@@ -301,7 +335,7 @@ class GTKWSave:
             flags |= GTKWFlag.highlight
         self._set_flags(flags)
         self._p(f'-{name}')
-        self._color_stack.append(0)
+        self._color_stack.append(GTKWColor.normal)
 
     def end_group(
         self, name: str, closed: bool = False, highlight: bool = False
@@ -348,7 +382,7 @@ class GTKWSave:
         self,
         name: str,
         alias: Optional[str] = None,
-        color: Optional[Union[str, int]] = None,
+        color: Optional[Union[GTKWColor, str, int]] = None,
         datafmt: str = 'hex',
         highlight: bool = False,
         rjustify: bool = True,
@@ -360,7 +394,7 @@ class GTKWSave:
 
         :param str name: fully-qualified name of signal to trace.
         :param str alias: optional alias to display instead of the *name*.
-        :param color: optional color to use for the signal's trace.
+        :param GTKWColor color: optional color to use for the signal's trace.
         :param str datafmt: the format used for data display. Must be one of 'hex',
                             'dec', 'bin', 'oct', 'ascii', 'real', or 'signed'.
         :param bool highlight: trace should be highlighted at GTKWave startup.
@@ -488,7 +522,7 @@ class GTKWSave:
         index: int,
         name: str,
         alias: Optional[str] = None,
-        color: Optional[Union[str, int]] = None,
+        color: Optional[Union[GTKWColor, str, int]] = None,
     ) -> None:
         """Trace individual bit of vector signal.
 
@@ -591,20 +625,6 @@ def make_translation_filter(
             lines.append(f'{value_str} ?{color}?{label}')
 
     return '\n'.join(lines)
-
-
-#: Map of color names to integer values.
-color_map = {
-    'cycle': -1,
-    'normal': 0,
-    'red': 1,
-    'orange': 2,
-    'yellow': 3,
-    'green': 4,
-    'blue': 5,
-    'indigo': 6,
-    'violet': 7,
-}
 
 
 def decode_flags(flags: Union[str, int]) -> List[str]:

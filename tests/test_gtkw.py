@@ -7,7 +7,13 @@ import time
 
 import pytest
 
-from vcd.gtkw import GTKWFlag, GTKWSave, decode_flags, make_translation_filter
+from vcd.gtkw import (
+    GTKWColor,
+    GTKWFlag,
+    GTKWSave,
+    decode_flags,
+    make_translation_filter,
+)
 
 
 def test_decode_flags():
@@ -152,7 +158,7 @@ def test_gtkw_pattern_trace(gtkw):
 
 def test_gtkw_group(gtkw):
     with gtkw.group('mygroup'):
-        gtkw.trace('a.b.c', alias='C', color=3)
+        gtkw.trace('a.b.c', alias='C', color=GTKWColor.yellow)
         gtkw.trace('a.b.d')
 
     lines = gtkw.file.getvalue().splitlines()
@@ -170,7 +176,7 @@ def test_gtkw_group(gtkw):
 
 def test_gtkw_group_closed(gtkw):
     with gtkw.group('mygroup', closed=True):
-        gtkw.trace('a.b.c', alias='C', color=3)
+        gtkw.trace('a.b.c', alias='C', color=GTKWColor.yellow)
         gtkw.trace('a.b.d')
 
     lines = gtkw.file.getvalue().splitlines()
@@ -188,7 +194,7 @@ def test_gtkw_group_closed(gtkw):
 
 def test_gtkw_group_highlight(gtkw):
     with gtkw.group('mygroup', highlight=True):
-        gtkw.trace('a.b.c', alias='C', color=3)
+        gtkw.trace('a.b.c', alias='C', color=GTKWColor.yellow)
         gtkw.trace('a.b.d')
 
     lines = gtkw.file.getvalue().splitlines()
@@ -263,6 +269,18 @@ def test_gtkw_trace_extraflags_deprecation(gtkw):
         gtkw.trace('a.b.c', datafmt='real', extraflags=None)
 
 
+def test_gtkw_trace_color_deprecation(gtkw):
+    with pytest.warns(DeprecationWarning):
+        gtkw.trace('a.b.c', color='blue')
+
+    with pytest.warns(DeprecationWarning):
+        gtkw.trace('d.e.f', color=7)
+
+    assert gtkw.file.getvalue() == '\n'.join(
+        ['@22', '[color] 5', 'a.b.c', '[color] 7', 'd.e.f', '']
+    )
+
+
 def test_gtkw_trace_filter_files(gtkw):
     gtkw.trace('mod.a', translate_filter_file='filter1.txt')
     gtkw.trace('mod.b', translate_filter_file='filter2.txt')
@@ -288,9 +306,9 @@ def test_gtkw_trace_filter_proc(gtkw):
 def test_gtkw_trace_bits(gtkw):
     name = 'a.b.c[3:0]'
     with gtkw.trace_bits(name):
-        gtkw.trace_bit(0, name, alias='bit0', color=0)
+        gtkw.trace_bit(0, name, alias='bit0', color=GTKWColor.normal)
         gtkw.trace_bit(1, name, alias='bit1')
-        gtkw.trace_bit(2, name, color='yellow')
+        gtkw.trace_bit(2, name, color=GTKWColor.yellow)
         gtkw.trace_bit(3, name)
 
     lines = gtkw.file.getvalue().splitlines()
@@ -313,9 +331,9 @@ def test_gtkw_trace_bits(gtkw):
 def test_gtkw_trace_bits_highlight(gtkw):
     name = 'a.b.c[3:0]'
     with gtkw.trace_bits(name, highlight=True, rjustify=False):
-        gtkw.trace_bit(0, name, alias='bit0', color=0)
+        gtkw.trace_bit(0, name, alias='bit0', color=GTKWColor.normal)
         gtkw.trace_bit(1, name, alias='bit1')
-        gtkw.trace_bit(2, name, color=2)
+        gtkw.trace_bit(2, name, color=GTKWColor.orange)
         gtkw.trace_bit(3, name)
 
     lines = gtkw.file.getvalue().splitlines()
@@ -338,8 +356,8 @@ def test_gtkw_trace_bits_highlight(gtkw):
 def test_gtkw_trace_bits_extra(gtkw):
     name = 'a.b.c[1:0]'
     with gtkw.trace_bits(name, extraflags=GTKWFlag.invert):
-        gtkw.trace_bit(0, name, alias='bit0', color='cycle')
-        gtkw.trace_bit(1, name, alias='bit1', color='cycle')
+        gtkw.trace_bit(0, name, alias='bit0', color=GTKWColor.cycle)
+        gtkw.trace_bit(1, name, alias='bit1', color=GTKWColor.cycle)
 
     lines = gtkw.file.getvalue().splitlines()
 
@@ -360,24 +378,24 @@ def test_gtkw_trace_bits_extra_deprecations(gtkw):
     name = 'a.b.c[1:0]'
     with pytest.warns(DeprecationWarning):
         with gtkw.trace_bits(name, extraflags=['invert']):
-            gtkw.trace_bit(0, name, alias='bit0', color='cycle')
-            gtkw.trace_bit(1, name, alias='bit1', color='cycle')
+            gtkw.trace_bit(0, name, alias='bit0', color=GTKWColor.cycle)
+            gtkw.trace_bit(1, name, alias='bit1', color=GTKWColor.cycle)
 
     with pytest.warns(DeprecationWarning):
         with gtkw.trace_bits(name, extraflags=None):
-            gtkw.trace_bit(0, name, alias='bit0', color='cycle')
-            gtkw.trace_bit(1, name, alias='bit1', color='cycle')
+            gtkw.trace_bit(0, name, alias='bit0', color=GTKWColor.cycle)
+            gtkw.trace_bit(1, name, alias='bit1', color=GTKWColor.cycle)
 
 
 def test_gtkw_color_stack(gtkw):
-    gtkw.trace('a', color='cycle')
-    gtkw.trace('b', color='cycle')
+    gtkw.trace('a', color=GTKWColor.cycle)
+    gtkw.trace('b', color=GTKWColor.cycle)
     with gtkw.group('mygroup'):
-        gtkw.trace('x', color='cycle')
-        gtkw.trace('y', color='cycle')
-        gtkw.trace('z', color='cycle')
-    gtkw.trace('c', color='cycle')
-    gtkw.trace('d', color='cycle')
+        gtkw.trace('x', color=GTKWColor.cycle)
+        gtkw.trace('y', color=GTKWColor.cycle)
+        gtkw.trace('z', color=GTKWColor.cycle)
+    gtkw.trace('c', color=GTKWColor.cycle)
+    gtkw.trace('d', color=GTKWColor.cycle)
 
     lines = gtkw.file.getvalue().splitlines()
 
