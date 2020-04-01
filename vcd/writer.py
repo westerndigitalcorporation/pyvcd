@@ -57,6 +57,9 @@ class VarType(Enum):
     wor = 'wor'
     string = 'string'
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class TimescaleMagnitude(Enum):
     """Valid timescale magnitudes."""
@@ -249,7 +252,7 @@ class VCDWriter:
             var_size = size
 
         var_str = '$var {var_type} {size} {ident} {name} $end'.format(
-            var_type=var_type.value, size=var_size, ident=ident, name=name
+            var_type=var_type, size=var_size, ident=ident, name=name
         )
 
         var: Variable
