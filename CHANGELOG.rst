@@ -1,6 +1,37 @@
 Changelog
 =========
 
+pyvcd-0.2.0 (2020-04-01)
+------------------------
+* Breaking changes:
+
+  * Python 3.6 is minimum version; drop Python 2 support
+  * Remove ident argument from VCDWriter.register_var()
+
+* Deprecations:
+
+  * Enums for scope, variable, and timescale types
+  * Enums for GTKWave flags and colors
+
+* Features:
+
+  * Inline type annotations, checkable with Mypy
+  * Use base-94 encoding for variable identifiers
+  * Improved performance
+
+* Repairs:
+
+  * Repair default string variable value
+  * Ensure compound vector value correctness
+
+* Development environment changes:
+
+  * Add top-level Makefile with targets for common commands
+  * Format code using black
+  * Format imports using isort
+  * Check type annotations with Mypy
+  * Use GitHub Actions for CI; drop Travis
+
 pyvcd-0.1.7 (2020-01-24)
 ------------------------
 * Repair event variable changes (#14)
