@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-from vcd.gtkw import GTKWSave, decode_flags, make_translation_filter
+from vcd.gtkw import GTKWFlag, GTKWSave, decode_flags, make_translation_filter
 
 
 def test_decode_flags():
@@ -246,8 +246,21 @@ def test_gtkw_trace_highlight(gtkw):
 
 
 def test_gtkw_trace_extraflags(gtkw):
-    gtkw.trace('a.b.c', datafmt='real', extraflags=['analog_step', 'analog_fullscale'])
+    gtkw.trace(
+        'a.b.c',
+        datafmt='real',
+        extraflags=GTKWFlag.analog_step | GTKWFlag.analog_fullscale,
+    )
     assert gtkw.file.getvalue() == '@c8020\na.b.c\n'
+
+
+def test_gtkw_trace_extraflags_deprecation(gtkw):
+    with pytest.warns(DeprecationWarning):
+        gtkw.trace(
+            'a.b.c', datafmt='real', extraflags=['analog_step', 'analog_fullscale']
+        )
+    with pytest.warns(DeprecationWarning):
+        gtkw.trace('a.b.c', datafmt='real', extraflags=None)
 
 
 def test_gtkw_trace_filter_files(gtkw):
@@ -324,7 +337,7 @@ def test_gtkw_trace_bits_highlight(gtkw):
 
 def test_gtkw_trace_bits_extra(gtkw):
     name = 'a.b.c[1:0]'
-    with gtkw.trace_bits(name, extraflags=['invert']):
+    with gtkw.trace_bits(name, extraflags=GTKWFlag.invert):
         gtkw.trace_bit(0, name, alias='bit0', color='cycle')
         gtkw.trace_bit(1, name, alias='bit1', color='cycle')
 
@@ -341,6 +354,19 @@ def test_gtkw_trace_bits_extra(gtkw):
         '@1001200',
         '-group_end',
     ]
+
+
+def test_gtkw_trace_bits_extra_deprecations(gtkw):
+    name = 'a.b.c[1:0]'
+    with pytest.warns(DeprecationWarning):
+        with gtkw.trace_bits(name, extraflags=['invert']):
+            gtkw.trace_bit(0, name, alias='bit0', color='cycle')
+            gtkw.trace_bit(1, name, alias='bit1', color='cycle')
+
+    with pytest.warns(DeprecationWarning):
+        with gtkw.trace_bits(name, extraflags=None):
+            gtkw.trace_bit(0, name, alias='bit0', color='cycle')
+            gtkw.trace_bit(1, name, alias='bit1', color='cycle')
 
 
 def test_gtkw_color_stack(gtkw):

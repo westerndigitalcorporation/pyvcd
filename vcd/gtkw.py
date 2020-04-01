@@ -12,13 +12,49 @@ __ http://gtkwave.sourceforge.net
 
 """
 from contextlib import contextmanager
-from functools import reduce
+from enum import Flag, auto
 from typing import IO, Any, Dict, Generator, List, Optional, Sequence, Tuple, Union
 import datetime
 import math
-import operator
 import os
 import time
+import warnings
+
+
+class GTKWFlag(Flag):
+    """These are the valid GTKWave trace flags."""
+
+    highlight = auto()  # Highlight the trace item
+    hex = auto()  # Hexadecimal data value representation
+    dec = auto()  # Decimal data value representation
+    bin = auto()  # Binary data value representation
+    oct = auto()  # Octal data value representation
+    rjustify = auto()  # Right-justify signal name/alias
+    invert = auto()
+    reverse = auto()
+    exclude = auto()
+    blank = auto()  # Used for blank, label, and/or analog height
+    signed = auto()  # Signed (2's compliment) data representation
+    ascii = auto()  # ASCII character representation
+    collapsed = auto()  # Used for closed groups
+    ftranslated = auto()  # Trace translated with filter file
+    ptranslated = auto()  # Trace translated with filter process
+    analog_step = auto()  # Show trace as discrete analog steps
+    analog_interpolated = auto()  # Show trace as analog with interpolation
+    analog_blank_stretch = auto()  # Used to extend height of analog data
+    real = auto()  # Read (floating point) data value representation
+    analog_fullscale = auto()  # Analog data scaled using full simulation time
+    zerofill = auto()
+    onefill = auto()
+    closed = auto()
+    grp_begin = auto()  # Begin a group of signals
+    grp_end = auto()  # End a group of signals
+    bingray = auto()
+    graybin = auto()
+    real2bits = auto()
+    ttranslated = auto()
+    popcnt = auto()
+    fpdecshift = auto()
 
 
 class GTKWSave:
@@ -45,7 +81,7 @@ class GTKWSave:
     def __init__(self, savefile: IO[str]) -> None:
         self.file = savefile
         self.path = getattr(savefile, 'name', None)
-        self._flags = 0
+        self._flags = GTKWFlag(0)
         self._color_stack = [0]
         self._filter_files: List[str] = []
         self._filter_procs: List[str] = []
@@ -53,9 +89,9 @@ class GTKWSave:
     def _p(self, *args: object, **kwargs) -> None:
         print(*args, file=self.file, **kwargs)
 
-    def _set_flags(self, flags: int) -> None:
+    def _set_flags(self, flags: GTKWFlag) -> None:
         if flags != self._flags:
-            self._p(f'@{flags:x}')
+            self._p(f'@{flags.value:x}')
             self._flags = flags
 
     def _set_color(self, color: Optional[Union[str, int]]) -> None:
@@ -258,12 +294,12 @@ class GTKWSave:
         :param bool highlight: group should be highlighted at GTKWave startup.
 
         """
-        flags = ['grp_begin', 'blank']
+        flags = GTKWFlag.grp_begin | GTKWFlag.blank
         if closed:
-            flags.append('closed')
+            flags |= GTKWFlag.closed
         if highlight:
-            flags.append('highlight')
-        self._set_flags(encode_flags(flags))
+            flags |= GTKWFlag.highlight
+        self._set_flags(flags)
         self._p(f'-{name}')
         self._color_stack.append(0)
 
@@ -280,12 +316,12 @@ class GTKWSave:
         :param bool highlight: group should be highlighted at GTKWave startup.
 
         """
-        flags = ['grp_end', 'blank']
+        flags = GTKWFlag.grp_end | GTKWFlag.blank
         if closed:
-            flags.extend(['closed', 'collapsed'])
+            flags |= GTKWFlag.closed | GTKWFlag.collapsed
         if highlight:
-            flags.append('highlight')
-        self._set_flags(encode_flags(flags))
+            flags |= GTKWFlag.highlight
+        self._set_flags(flags)
         self._p(f'-{name}')
         self._color_stack.pop(-1)
 
@@ -300,12 +336,12 @@ class GTKWSave:
         :param bool highlight: blank should be highlighted at GTKWave startup.
 
         """
-        flags = ['blank']
+        flags = GTKWFlag.blank
         if analog_extend:
-            flags.append('analog_blank_stretch')
+            flags |= GTKWFlag.analog_blank_stretch
         if highlight:
-            flags.append('highlight')
-        self._set_flags(encode_flags(flags))
+            flags |= GTKWFlag.highlight
+        self._set_flags(flags)
         self._p(f'-{label}')
 
     def trace(
@@ -316,7 +352,7 @@ class GTKWSave:
         datafmt: str = 'hex',
         highlight: bool = False,
         rjustify: bool = True,
-        extraflags: Optional[Sequence[str]] = None,
+        extraflags: Union[GTKWFlag, Optional[Sequence[str]]] = GTKWFlag(0),
         translate_filter_file: Optional[str] = None,
         translate_filter_proc: Optional[str] = None,
     ) -> None:
@@ -329,7 +365,7 @@ class GTKWSave:
                             'dec', 'bin', 'oct', 'ascii', 'real', or 'signed'.
         :param bool highlight: trace should be highlighted at GTKWave startup.
         :param bool rjustify: trace name/alias should be right-justified.
-        :param list extraflags: extra flags to apply to the trace.
+        :param GTKWFlag extraflags: extra flags to apply to the trace.
         :param str translate_filter_file: path to translate filter file.
         :param str translate_filter_proc: path to translate filter executable.
 
@@ -344,18 +380,28 @@ class GTKWSave:
         """
         if datafmt not in ['hex', 'dec', 'bin', 'oct', 'ascii', 'real', 'signed']:
             raise ValueError(f'Invalid datafmt ({datafmt})')
-        flags = [datafmt]
-        if extraflags:
-            flags.extend(extraflags)
+        flags = GTKWFlag.__members__[datafmt]
+        if isinstance(extraflags, GTKWFlag):
+            flags |= extraflags
+        else:
+            warnings.warn(
+                'Using Optional[Sequence[str]] for extraflags is deprecated. '
+                'Use vcd.gtkw.GTKWFlag instead.',
+                DeprecationWarning,
+            )
+            if extraflags is not None:
+                for flag in GTKWFlag:
+                    if flag.name in extraflags:
+                        flags |= flag
         if highlight:
-            flags.append('highlight')
+            flags |= GTKWFlag.highlight
         if rjustify:
-            flags.append('rjustify')
+            flags |= GTKWFlag.rjustify
         if translate_filter_file:
-            flags.append('ftranslated')
+            flags |= GTKWFlag.ftranslated
         if translate_filter_proc:
-            flags.append('ptranslated')
-        self._set_flags(encode_flags(flags))
+            flags |= GTKWFlag.ptranslated
+        self._set_flags(flags)
         self._set_color(color)
         self._set_translate_filter_file(translate_filter_file)
         self._set_translate_filter_proc(translate_filter_proc)
@@ -372,7 +418,7 @@ class GTKWSave:
         datafmt: str = 'hex',
         highlight: bool = False,
         rjustify: bool = True,
-        extraflags: Optional[Sequence[str]] = None,
+        extraflags: Union[GTKWFlag, Optional[Sequence[str]]] = GTKWFlag(0),
         translate_filter_file: Optional[str] = None,
         translate_filter_proc: Optional[str] = None,
     ) -> Generator[None, None, None]:
@@ -394,7 +440,7 @@ class GTKWSave:
         :param str datafmt: format for data display.
         :param bool highlight: trace should be highlighted at GTKWave startup.
         :param bool rjustify: trace name/alias should be right-justified.
-        :param list extraflags: extra flags to apply to the trace.
+        :param GTKWFlag extraflags: extra flags to apply to the trace.
         :param str translate_filter_file: path to translate filter file.
         :param str translate_filter_proc: path to translate filter executable.
 
@@ -410,21 +456,31 @@ class GTKWSave:
             translate_filter_file,
             translate_filter_proc,
         )
-        flags = ['bin']
-        if extraflags:
-            flags.extend(extraflags)
+        flags = GTKWFlag.bin
+        if isinstance(extraflags, GTKWFlag):
+            flags |= extraflags
+        else:
+            warnings.warn(
+                'Using Optional[Sequence[str]] for extraflags is deprecated. '
+                'Use vcd.gtkw.GTKWFlag instead.',
+                DeprecationWarning,
+            )
+            if extraflags is not None:
+                for flag in GTKWFlag:
+                    if flag.name in extraflags:
+                        flags |= flag
         if highlight:
-            flags.append('highlight')
+            flags |= GTKWFlag.highlight
         if rjustify:
-            flags.append('rjustify')
-        self._set_flags(encode_flags(flags))
+            flags |= GTKWFlag.rjustify
+        self._set_flags(flags)
         try:
             yield None
         finally:
-            flags = ['blank', 'grp_end', 'collapsed']
+            flags = GTKWFlag.blank | GTKWFlag.grp_end | GTKWFlag.collapsed
             if highlight:
-                flags.append('highlight')
-            self._set_flags(encode_flags(flags))
+                flags |= GTKWFlag.highlight
+            self._set_flags(flags)
             self._p('-group_end')
 
     def trace_bit(
@@ -550,44 +606,6 @@ color_map = {
     'violet': 7,
 }
 
-#: These are the valid GTKWave trace flag names.
-flag_names = [
-    'highlight',  # Highlight the trace item
-    'hex',  # Hexadecimal data value representation
-    'dec',  # Decimal data value representation
-    'bin',  # Binary data value representation
-    'oct',  # Octal data value representation
-    'rjustify',  # Right-justify signal name/alias
-    'invert',
-    'reverse',
-    'exclude',
-    'blank',  # Used for blank, label, and/or analog height
-    'signed',  # Signed (2's compliment) data representation
-    'ascii',  # ASCII character representation
-    'collapsed',  # Used for closed groups
-    'ftranslated',  # Trace translated with filter file
-    'ptranslated',  # Trace translated with filter process
-    'analog_step',  # Show trace as discrete analog steps
-    'analog_interpolated',  # Show trace as analog with interpolation
-    'analog_blank_stretch',  # Used to extend height of analog data
-    'real',  # Read (floating point) data value representation
-    'analog_fullscale',  # Analog data scaled using full simulation time
-    'zerofill',
-    'onefill',
-    'closed',
-    'grp_begin',  # Begin a group of signals
-    'grp_end',  # End a group of signals
-    'bingray',
-    'graybin',
-    'real2bits',
-    'ttranslated',
-    'popcnt',
-    'fpdecshift',
-]
-
-#: Map flag names to their integer mask values.
-flag_masks = {name: (1 << i) for i, name in enumerate(flag_names)}
-
 
 def decode_flags(flags: Union[str, int]) -> List[str]:
     """Decode hexadecimal flags from GTKWave save file into flag names.
@@ -601,20 +619,10 @@ def decode_flags(flags: Union[str, int]) -> List[str]:
 
     """
     if isinstance(flags, str):
-        flags = int(flags.lstrip('@'), 16)
-    return [name for i, name in enumerate(flag_names) if (1 << i) & flags]
-
-
-def encode_flags(names: Sequence[str]) -> int:
-    """Encode flag names into integer representation.
-
-    The this is the bitwise-or of each of the flag's mask values.
-
-    :param names: Sequence of flag names, i.e. from :const:`flag_names`.
-    :returns: Integer value of flags.
-
-    """
-    return reduce(operator.ior, (flag_masks[name] for name in names), 0)
+        decoded = GTKWFlag(int(flags.lstrip('@'), 16))
+    else:
+        decoded = GTKWFlag(flags)
+    return [flag.name for flag in GTKWFlag if flag & decoded]
 
 
 def spawn_gtkwave_interactive(
