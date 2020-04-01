@@ -7,8 +7,53 @@ on:
     branches: [ master ]
 
 jobs:
-  test:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
 
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install setuptools_scm wheel
+
+    - name: Build
+      run: |
+        python setup.py sdist bdist_wheel
+
+    - name: Upload dist
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: pyvcd-dist
+        path: "dist/*"
+
+    ## TODO: upload-artifact@v2-preview insists on wrapping artifacts in a zip
+    ## file. The config below ends up creating downloads which are individual
+    ## zip files each containing a single compressed tar.gz or .whl file.
+    ## Therefore, for the time being, use the above config that creates a
+    ## single pyvcd-dist.zip artifact with both the sdist and wheel inside.
+
+    # - name: Upload sdist
+    #   uses: actions/upload-artifact@v2-preview
+    #   with:
+    #     name: sdist
+    #     path: "dist/pyvcd*.tar.gz"
+
+    # - name: Upload wheel
+    #   uses: actions/upload-artifact@v2-preview
+    #   with:
+    #     name: wheel
+    #     path: "dist/pyvcd*.whl"
+
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
