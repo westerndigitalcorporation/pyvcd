@@ -208,12 +208,12 @@ def test_vcd_scopes(capsys):
         '$enddefinitions',
         '#0',
         '$dumpvars',
-        'bz 0',
-        'bx 1',
-        'bx 2',
-        'bx 3',
-        'bx 4',
-        'bx 5',
+        'bz !',
+        'bx "',
+        'bx #',
+        'bx $',
+        'bx %',
+        'bx &',
         '$end',
     ]
     for line, expected in zip(split_lines(capsys), expected_lines):
@@ -229,12 +229,12 @@ def test_vcd_init_timestamp(capsys):
         '$date',
         '$timescale',
         '$scope module a',
-        '$var integer 8 0 n $end',
+        '$var integer 8 ! n $end',
         '$upscope',
         '$enddefinitions',
         '#123',
         '$dumpvars',
-        'bz 0',
+        'bz !',
         '$end',
     ]
     for line, expected in zip(split_lines(capsys), expected_lines):
@@ -315,16 +315,16 @@ def test_vcd_register_int(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_var('scope', 'a', 'integer')
     out = capsys.readouterr()[0]
-    assert '$var integer 64 0 a $end' in out
-    assert 'bx' in out
+    assert '$var integer 64 ! a $end' in out
+    assert 'bx !' in out
 
 
 def test_vcd_register_int_tuple(capsys):
     with VCDWriter(sys.stdout, date='') as vcd:
         vcd.register_var('scope', 'a', 'integer', (8, 4, 1))
     out = capsys.readouterr()[0]
-    assert '$var integer 13 0 a $end' in out
-    assert 'bx 0' in out
+    assert '$var integer 13 ! a $end' in out
+    assert 'bx !' in out
 
 
 def test_vcd_register_int_tuple_invalid_init_type():
@@ -355,16 +355,16 @@ def test_vcd_register_real(capsys):
 
     expected_last = [
         '$scope module scope $end',
-        '$var real 64 0 a $end',
-        '$var real 64 1 b $end',
-        '$var real 64 2 c $end',
+        '$var real 64 ! a $end',
+        '$var real 64 " b $end',
+        '$var real 64 # c $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
-        'r0 0',
-        'r123 1',
-        'r1.23 2',
+        'r0 !',
+        'r123 "',
+        'r1.23 #',
         '$end',
     ]
     lines = split_lines(capsys)
@@ -379,8 +379,8 @@ def test_vcd_register_event(capsys):
             vcd.register_var('scope', 'f', 'event', init='yes')
     expected_last = [
         '$scope module scope $end',
-        '$var event 1 0 a $end',
-        '$var event 1 1 b $end',
+        '$var event 1 ! a $end',
+        '$var event 1 " b $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
@@ -411,20 +411,20 @@ def test_vcd_multiple_events(capsys):
     expected_lines = [
         '$timescale 1 us $end',
         '$scope module scope $end',
-        '$var event 1 0 a $end',
+        '$var event 1 ! a $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
         '$end',
         '#1',
-        '10',
+        '1!',
         '#2',
-        '10',
-        '10',
-        '10',
+        '1!',
+        '1!',
+        '1!',
         '#3',
-        '10',
+        '1!',
     ]
 
     assert expected_lines == split_lines(capsys)
@@ -450,23 +450,23 @@ def test_vcd_scalar_var(capsys):
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
-        'x0',
-        '01',
+        'x!',
+        '0"',
         '$end',
         '#1',
-        '10',
+        '1!',
         '#2',
-        '00',
+        '0!',
         '#3',
-        'z0',
+        'z!',
         '#4',
-        'x0',
+        'x!',
         '#5',
-        '00',
+        '0!',
         '#6',
-        '10',
+        '1!',
         '#7',
-        'z0',
+        'z!',
     ]
     assert lines[-len(expected) :] == expected
 
@@ -490,14 +490,14 @@ def test_vcd_real_var(capsys):
     lines = split_lines(capsys)
     expected_last = [
         '#1',
-        'r1234.5 0',
-        'r5432.1 1',
+        'r1234.5 !',
+        'r5432.1 "',
         '#2',
-        'r0 0',
-        'r1 1',
+        'r0 !',
+        'r1 "',
         '#3',
-        'r999.9 0',
-        'r-999.9 1',
+        'r999.9 !',
+        'r-999.9 "',
     ]
 
     assert lines[-len(expected_last) :] == expected_last
@@ -522,14 +522,14 @@ def test_vcd_integer_var(capsys):
 
     expected_last = [
         '#1',
-        'b100 0',
-        'b11111100 1',
+        'b100 !',
+        'b11111100 "',
         '#2',
-        'bz 0',
-        'bX 1',
+        'bz !',
+        'bX "',
         '#3',
-        'bz 1',
-        'b1010 0',
+        'bz "',
+        'b1010 !',
     ]
 
     lines = split_lines(capsys)
@@ -547,15 +547,15 @@ def test_vcd_dump_on_no_op(capsys):
         '$date today $end',
         '$timescale 1 us $end',
         '$scope module scope $end',
-        '$var integer 8 0 a $end',
+        '$var integer 8 ! a $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
-        'bx 0',
+        'bx !',
         '$end',
         '#1',
-        'b1 0',
+        'b1 !',
     ]
 
     assert expected_lines == split_lines(capsys)
@@ -573,22 +573,22 @@ def test_vcd_dump_off_early(capsys):
         '$date today $end',
         '$timescale 1 us $end',
         '$scope module scope $end',
-        '$var integer 8 0 a $end',
+        '$var integer 8 ! a $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
-        'b111 0',
+        'b111 !',
         '$end',
         '$dumpoff',
-        'bx 0',
+        'bx !',
         '$end',
         '#10',
         '$dumpon',
-        'b1 0',
+        'b1 !',
         '$end',
         '#15',
-        'b10 0',
+        'b10 !',
     ]
 
     assert expected_lines == split_lines(capsys)
@@ -603,29 +603,29 @@ def test_vcd_dump_off_real(capsys):
         vcd.dump_on(4)
         vcd.change(v0, 5, 5.0)
 
-    assert v0.ident == '0'
+    assert v0.ident == '!'
 
     expected_lines = [
         '$timescale 1 us $end',
         '$scope module scope $end',
-        '$var real 64 0 a $end',
+        '$var real 64 ! a $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
-        'r0 0',
+        'r0 !',
         '$end',
         '#1',
-        'r1 0',
+        'r1 !',
         '#2',
         '$dumpoff',
         '$end',
         '#4',
         '$dumpon',
-        'r3 0',
+        'r3 !',
         '$end',
         '#5',
-        'r5 0',
+        'r5 !',
     ]
 
     assert expected_lines == split_lines(capsys)
@@ -660,47 +660,47 @@ def test_vcd_dump_off_on(capsys):
         '$date today $end',
         '$timescale 1 us $end',
         '$scope module scope $end',
-        '$var integer 8 0 a $end',
-        '$var wire 1 1 b $end',
-        '$var event 1 2 c $end',
-        '$var real 64 3 d $end',
+        '$var integer 8 ! a $end',
+        '$var wire 1 " b $end',
+        '$var event 1 # c $end',
+        '$var real 64 $ d $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
-        'bx 0',
-        'x1',
-        'r1.23 3',
+        'bx !',
+        'x"',
+        'r1.23 $',
         '$end',
         '#1',
-        'b1010 0',
+        'b1010 !',
         '#2',
-        '11',
+        '1"',
         '#4',
         '$dumpoff',
-        'bx 0',
-        'x1',
+        'bx !',
+        'x"',
         '$end',
         '#9',
         '$dumpon',
-        'b1011 0',
-        '01',
-        'r1.23 3',
+        'b1011 !',
+        '0"',
+        'r1.23 $',
         '$end',
         '#10',
         '$dumpoff',
-        'bx 0',
-        'x1',
+        'bx !',
+        'x"',
         '$end',
         '$dumpon',
-        'b1011 0',
-        '01',
-        'r1.23 3',
+        'b1011 !',
+        '0"',
+        'r1.23 $',
         '$end',
         '#11',
-        'b1100 0',
-        '11',
-        'r3.21 3',
+        'b1100 !',
+        '1"',
+        'r3.21 $',
     ]
 
     assert expected_lines == split_lines(capsys)
@@ -721,16 +721,16 @@ def test_vcd_dump_off_time_order(capsys):
         '$date today $end',
         '$timescale 1 us $end',
         '$scope module scope $end',
-        '$var integer 8 0 a $end',
+        '$var integer 8 ! a $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
-        'bx 0',
+        'bx !',
         '$end',
         '#1',
         '$dumpoff',
-        'bx 0',
+        'bx !',
         '$end',
     ]
 
@@ -815,36 +815,36 @@ def test_dump_off_compound_vector(capsys):
         vcd.change(v3, 4, '1-1')
         vcd.dump_on(5)
     expected = [
-        '$var integer 16 0 n0 $end',
-        '$var integer 16 1 n1 $end',
-        '$var integer 2 2 n2 $end',
-        '$var integer 6 3 n3 $end',
+        '$var integer 16 ! n0 $end',
+        '$var integer 16 " n1 $end',
+        '$var integer 2 # n2 $end',
+        '$var integer 6 $ n3 $end',
         '$upscope $end',
         '$enddefinitions $end',
         '#0',
         '$dumpvars',
-        'bx 0',
-        'bzxxxx-------- 1',
-        'b10 2',
-        'bx 3',
+        'bx !',
+        'bzxxxx-------- "',
+        'b10 #',
+        'bx $',
         '$end',
         '#1',
-        'b0 0',
+        'b0 !',
         '#2',
-        'b1111000011111111 0',
+        'b1111000011111111 !',
         '#3',
         '$dumpoff',
-        'bx 0',
-        'bx 1',
-        'bx 2',
-        'bx 3',
+        'bx !',
+        'bx "',
+        'bx #',
+        'bx $',
         '$end',
         '#5',
         '$dumpon',
-        'b1111000011111111 0',
-        'bzxxxx-------- 1',
-        'b10 2',
-        'b1--001 3',
+        'b1111000011111111 !',
+        'bzxxxx-------- "',
+        'b10 #',
+        'b1--001 $',
         '$end',
     ]
     lines = split_lines(capsys)
@@ -868,19 +868,19 @@ def test_vcd_string_var(capsys):
     expected = [
         '#0',
         '$dumpvars',
-        's 0',
-        'sfoobar 1',
+        's !',
+        'sfoobar "',
         '$end',
         '#1',
-        'shello 0',
+        'shello !',
         '#2',
-        's 0',
+        's !',
         '#3',
-        'sworld 0',
+        'sworld !',
         '#4',
-        's 0',
+        's !',
         '#5',
-        's! 0',
+        's! !',
         '#6',
         '$dumpoff',
         '$end',

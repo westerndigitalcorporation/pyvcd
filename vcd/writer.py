@@ -150,7 +150,7 @@ class VCDWriter:
         self._registering = True
         self._closed = False
         self._dumping = True
-        self._next_var_id: int = 0
+        self._next_var_id: int = 1
         self._scope_var_strs: Dict[ScopeTuple, List[str]] = {}
         self._scope_var_names: Dict[ScopeTuple, Set[str]] = {}
         self._scope_types: Dict[ScopeTuple, ScopeType] = {}
@@ -233,7 +233,7 @@ class VCDWriter:
             )
 
         if ident is None:
-            ident = format(self._next_var_id, 'x')
+            ident = _encode_identifier(self._next_var_id)
 
         if size is None:
             if var_type in [VarType.integer, VarType.real, VarType.realtime]:
@@ -782,3 +782,14 @@ def _format_scalar_value(value: ScalarValue, size: int, check: bool) -> str:
         ):
             raise ValueError(f'Invalid vector value ({value})')
         return value
+
+
+def _encode_identifier(v: int) -> str:
+    """Encode identifer value into base-94 string."""
+    assert v > 0, 'identifier codes must be > 0'
+    encoded = ''
+    while v != 0:
+        v -= 1
+        encoded += chr((v % 94) + 33)
+        v //= 94
+    return encoded

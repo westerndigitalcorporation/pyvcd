@@ -27,27 +27,33 @@ Quick Start
    >>> from vcd import VCDWriter
    >>> with VCDWriter(sys.stdout, timescale='1 ns', date='today') as writer:
    ...     counter_var = writer.register_var('a.b.c', 'counter', 'integer', size=8)
+   ...     real_var = writer.register_var('a.b.c', 'x', 'real', init=1.23)
    ...     for timestamp, value in enumerate(range(10, 20, 2)):
    ...         writer.change(counter_var, timestamp, value)
+   ...     writer.change(real_var, 5, 3.21)
    $date today $end
    $timescale 1 ns $end
    $scope module a $end
    $scope module b $end
    $scope module c $end
-   $var integer 8 0 counter $end
+   $var integer 8 ! counter $end
+   $var real 64 " x $end
    $upscope $end
    $upscope $end
    $upscope $end
    $enddefinitions $end
    #0
    $dumpvars
-   b1010 0
+   b1010 !
+   r1.23 "
    $end
    #1
-   b1100 0
+   b1100 !
    #2
-   b1110 0
+   b1110 !
    #3
-   b10000 0
+   b10000 !
    #4
-   b10010 0
+   b10010 !
+   #5
+   r3.21 "
