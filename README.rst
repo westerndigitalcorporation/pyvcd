@@ -12,8 +12,8 @@ Visit `PyVCD on GitHub <https://github.com/SanDisk-Open-Source/pyvcd>`_.
    :target: http://pyvcd.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
-.. image:: https://travis-ci.org/SanDisk-Open-Source/pyvcd.svg?branch=master
-   :target: https://travis-ci.org/SanDisk-Open-Source/pyvcd
+.. image:: https://github.com/SanDisk-Open-Source/pyvcd/workflows/CI/badge.svg
+   :target: https://github.com/SanDisk-Open-Source/pyvcd/actions?query=workflow%3ACI
 
 .. image:: https://coveralls.io/repos/github/SanDisk-Open-Source/pyvcd/badge.svg?branch=master
    :target: https://coveralls.io/github/SanDisk-Open-Source/pyvcd?branch=master
