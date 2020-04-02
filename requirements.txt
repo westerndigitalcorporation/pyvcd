@@ -1,5 +1,7 @@
+black >= 19.10b0; implementation_name == "cpython"
 flake8
 isort
+mypy >= 0.770; implementation_name == "cpython"
 pytest
 pytest-cov
 setuptools_scm
