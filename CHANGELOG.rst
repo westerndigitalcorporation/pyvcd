@@ -1,6 +1,11 @@
 Changelog
 =========
 
+pyvcd-0.2.1 (2020-04-05)
+------------------------
+* Add python_requires >=3.6 to setup
+* Packaging changes related to PEP-517
+
 pyvcd-0.2.0 (2020-04-01)
 ------------------------
 * Breaking changes:
