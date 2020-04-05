@@ -34,6 +34,20 @@ jobs:
         name: pyvcd-dist
         path: "dist/*"
 
+    # - name: Test Publish package
+    #   uses: pypa/gh-action-pypi-publish@master
+    #   with:
+    #     user: __token__
+    #     password: ${{ secrets.test_pypi_password }}
+    #     repository_url: https://test.pypi.org/legacy/
+
+    - name: Publish package
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}
+
   test:
     runs-on: ubuntu-latest
     strategy:
