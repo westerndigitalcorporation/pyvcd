@@ -184,7 +184,7 @@ class VCDWriter:
         size: Optional[VariableSize] = None,
         init: VarValue = None,
     ) -> 'Variable':
-        """Register a VCD variable and return function to change value.
+        """Register a new VCD variable.
 
         All VCD variables must be registered prior to any value changes.
 
@@ -291,6 +291,38 @@ class VCDWriter:
         scope_names.add(name)
 
         return var
+
+    def register_alias(self, scope: ScopeInput, name: str, var: 'Variable') -> None:
+        """Register a variable alias.
+
+        The same VCD identifier may be associated with multiple reference names ("$var"
+        declarations). This method associates an existing :class:`Variable` instance
+        with a different variable scope and/or name. The alias shares the same
+        identifier, type, size, and value as the reference variable. Because the
+        identifier is shared, calling :meth:`change()` with ``var`` changes the value of
+        of all associated reference names.
+
+        :param scope: The hierarchical scope that the variable belongs within.
+        :type scope: str or sequence of str
+        :param str name: Name of the variable.
+        :param Variable var: Existing variable to alias.
+
+        """
+        if self._closed:
+            raise VCDPhaseError('Cannot register after close().')
+        elif not self._registering:
+            raise VCDPhaseError('Cannot register after time 0.')
+
+        scope_tuple = self._get_scope_tuple(scope)
+        scope_names = self._scope_var_names.setdefault(scope_tuple, set())
+        if name in scope_names:
+            raise KeyError(
+                f'Duplicate var {name} in scope {self._scope_sep.join(scope_tuple)}'
+            )
+
+        var_str = f'$var {var.type} {var.size} {var.ident} {name} $end'
+        self._scope_var_strs.setdefault(scope_tuple, []).append(var_str)
+        scope_names.add(name)
 
     def dump_off(self, timestamp: TimeValue) -> None:
         """Suspend dumping to VCD file."""

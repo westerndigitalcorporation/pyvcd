@@ -104,6 +104,15 @@ def test_vcd_change_after_close(capsys):
         vcd.flush()
 
 
+def test_vcd_alias_after_close(capsys):
+    vcd = VCDWriter(sys.stdout)
+    var = vcd.register_var('a', 'b', 'integer')
+    assert not split_lines(capsys)
+    vcd.close()
+    with pytest.raises(VCDPhaseError):
+        vcd.register_alias('c', 'd', var)
+
+
 def test_vcd_no_scopes(capsys):
     with VCDWriter(sys.stdout, date='today', version='some\nversion', comment='hello'):
         pass
@@ -166,6 +175,36 @@ def test_vcd_no_duplicates(capsys):
         'b1111 !',
         '#6',
         'b1010 !',
+    ]
+
+
+def test_vcd_aliases(capsys):
+    with VCDWriter(sys.stdout, date='today') as vcd:
+        var = vcd.register_var('sss', 'nnn', 'integer', 32)
+        vcd.register_alias('sss', 'mmm', var)
+        vcd.register_alias('ttt', 'nnn', var)
+        vcd.change(var, 0, 'x')
+        vcd.change(var, 1, 10)
+        vcd.change(var, 2, 11)
+    assert split_lines(capsys) == [
+        '$date today $end',
+        '$timescale 1 us $end',
+        '$scope module sss $end',
+        '$var integer 32 ! nnn $end',
+        '$var integer 32 ! mmm $end',
+        '$upscope $end',
+        '$scope module ttt $end',
+        '$var integer 32 ! nnn $end',
+        '$upscope $end',
+        '$enddefinitions $end',
+        '#0',
+        '$dumpvars',
+        'bx !',
+        '$end',
+        '#1',
+        'b1010 !',
+        '#2',
+        'b1011 !',
     ]
 
 
@@ -278,6 +317,20 @@ def test_vcd_late_registration(capsys):
             vcd.register_var('aaa.bbb', 'nn2', 'integer', 8)
 
 
+def test_vcd_late_alias_registration(capsys):
+    with VCDWriter(sys.stdout, date='today') as vcd:
+        var0 = vcd.register_var('aaa.bbb', 'nn0', 'integer', 8)
+        vcd.change(var0, 0, 123)
+
+        # Still at t0, registration okay...
+        vcd.register_alias('aaa.bbb', 'nn1', var0)
+
+        vcd.change(var0, 1, 210)
+
+        with pytest.raises(VCDPhaseError):
+            vcd.register_alias('aaa.bbb', 'nn2', var0)
+
+
 def test_vcd_missing_size(capsys):
     with VCDWriter(sys.stdout, date='today') as vcd:
         with pytest.raises(ValueError):
@@ -301,6 +354,16 @@ def test_vcd_duplicate_var_name(capsys):
         vcd.register_var('aaa.bbb', 'nn0', 'integer', 8)
         with pytest.raises(KeyError):
             vcd.register_var('aaa.bbb', 'nn0', 'wire', 1)
+
+
+def test_vcd_duplicate_alias(capsys):
+    with VCDWriter(sys.stdout, date='today') as vcd:
+        var = vcd.register_var('aaa.bbb', 'nn0', 'integer', 8)
+        vcd.register_alias('aaa.bbb', 'nn1', var)
+        with pytest.raises(KeyError):
+            vcd.register_alias('aaa.bbb', 'nn0', var)
+        with pytest.raises(KeyError):
+            vcd.register_alias('aaa.bbb', 'nn1', var)
 
 
 def test_vcd_change_out_of_order(capsys):
