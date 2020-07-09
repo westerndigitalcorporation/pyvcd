@@ -1,6 +1,10 @@
 Changelog
 =========
 
+pyvcd-0.2.2 (2020-07-09)
+------------------------
+* Add register_alias() for creating aliases to VCD variables (#15).
+
 pyvcd-0.2.1 (2020-04-05)
 ------------------------
 * Add python_requires >=3.6 to setup
