@@ -1,9 +1,9 @@
 """Tests for vcd.gtkw module."""
 
-from io import StringIO
 import datetime
 import os
 import time
+from io import StringIO
 
 import pytest
 

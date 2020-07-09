@@ -11,14 +11,14 @@ and more.
 __ http://gtkwave.sourceforge.net
 
 """
-from contextlib import contextmanager
-from enum import Enum, Flag, auto
-from typing import IO, Any, Dict, Generator, List, Optional, Sequence, Tuple, Union
 import datetime
 import math
 import os
 import time
 import warnings
+from contextlib import contextmanager
+from enum import Enum, Flag, auto
+from typing import IO, Any, Dict, Generator, List, Optional, Sequence, Tuple, Union
 
 
 class GTKWFlag(Flag):

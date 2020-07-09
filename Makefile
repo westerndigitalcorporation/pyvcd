@@ -9,7 +9,7 @@ lint-black:
 
 .PHONY: lint-isort
 lint-isort:
-	isort --check-only --quiet --diff --recursive .
+	isort --check-only --quiet --diff .
 
 .PHONY: lint-flake8
 lint-flake8:
@@ -28,7 +28,7 @@ format-black:
 
 .PHONY: format-isort
 format-isort:
-	isort --recursive .
+	isort .
 
 .PHONY: test
 test:
