@@ -1,6 +1,10 @@
 Changelog
 =========
 
+pyvcd-0.2.3 (2020-07-09)
+------------------------
+* Add long_description_content_type to setup.cfg
+
 pyvcd-0.2.2 (2020-07-09)
 ------------------------
 * Add register_alias() for creating aliases to VCD variables (#15).
