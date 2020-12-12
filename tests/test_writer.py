@@ -923,11 +923,12 @@ def test_vcd_string_var(capsys):
         vcd.change(v0, 1, 'hello')
         vcd.change(v0, 2, '')
         vcd.change(v0, 3, 'world')
-        with pytest.raises(ValueError):
-            vcd.change(v0, 4, 'no string allowed')
-        vcd.change(v0, 4, None)
-        vcd.change(v0, 5, '!')
-        vcd.dump_off(6)
+        vcd.change(v0, 4, 'spaces are\tok')
+        vcd.change(v0, 5, 'newlines\r\ntoo')
+        vcd.change(v0, 6, 'slash\\slash')
+        vcd.change(v0, 7, None)
+        vcd.change(v0, 8, '!')
+        vcd.dump_off(8)
     expected = [
         '#0',
         '$dumpvars',
@@ -941,10 +942,15 @@ def test_vcd_string_var(capsys):
         '#3',
         'sworld !',
         '#4',
-        's !',
+        'sspaces\\x20are\\tok !',
         '#5',
-        's! !',
+        'snewlines\\r\\ntoo !',
         '#6',
+        'sslash\\\\slash !',
+        '#7',
+        's !',
+        '#8',
+        's! !',
         '$dumpoff',
         '$end',
     ]
