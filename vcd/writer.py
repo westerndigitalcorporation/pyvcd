@@ -664,11 +664,19 @@ class StringVariable(Variable[StringValue]):
 
         """
         if value is None:
-            value = ''
-        if check and not isinstance(value, str):
+            value_str = ''
+        elif check and not isinstance(value, str):
             raise ValueError(f'Invalid string value ({value!r})')
-
-        value_str = _escape_string(value)
+        else:
+            value_str = value.translate(
+                {
+                    9: "\\t",
+                    10: "\\n",
+                    13: "\\r",
+                    32: "\\x20",
+                    92: "\\\\",
+                }
+            )
         return f's{value_str} {self.ident}'
 
 
@@ -815,16 +823,3 @@ def _encode_identifier(v: int) -> str:
         encoded += chr((v % 94) + 33)
         v //= 94
     return encoded
-
-
-def _escape_string(v: str) -> str:
-    """Escape special characters for GTKWave."""
-    return v.translate(
-        {
-            9: "\\t",
-            10: "\\n",
-            13: "\\r",
-            32: "\\x20",
-            92: "\\\\",
-        }
-    )
