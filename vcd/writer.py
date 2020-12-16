@@ -638,7 +638,7 @@ class EventVariable(Variable[EventValue]):
         if value:
             return '1' + self.ident
         else:
-            raise ValueError('invalid event value')
+            raise ValueError('Invalid event value')
 
     def dump(self, check: bool = True) -> Optional[str]:
         return None

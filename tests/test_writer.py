@@ -928,6 +928,9 @@ def test_vcd_string_var(capsys):
         vcd.change(v0, 6, 'slash\\slash')
         vcd.change(v0, 7, None)
         vcd.change(v0, 8, '!')
+        with pytest.raises(ValueError) as e:
+            vcd.change(v0, 9, 42)
+        assert 'Invalid string value' in e.value.args[0]
         vcd.dump_off(8)
     expected = [
         '#0',
