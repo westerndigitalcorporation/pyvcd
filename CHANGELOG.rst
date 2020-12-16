@@ -1,6 +1,11 @@
 Changelog
 =========
 
+pyvcd-0.2.4 (2020-12-15)
+------------------------
+* Escape special characters in (GTKWave) string vars (#17)
+* Update package classifiers for for Python 3.9 support
+
 pyvcd-0.2.3 (2020-07-09)
 ------------------------
 * Add long_description_content_type to setup.cfg
@@ -60,7 +65,7 @@ pyvcd-0.1.6 (2019-12-26)
 pyvcd-0.1.5 (2019-12-04)
 ------------------------
 * Improve runtime performance by using write() (#9)
-* Update package classifies to note Python 3.8 support
+* Update package classifiers to note Python 3.8 support
 
 pyvcd-0.1.4 (2018-12-18)
 ------------------------
