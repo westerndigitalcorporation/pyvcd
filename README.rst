@@ -6,17 +6,17 @@ IEEE 1364-2005.
 
 Read the `documentation <http://pyvcd.readthedocs.io/en/latest/>`_.
 
-Visit `PyVCD on GitHub <https://github.com/SanDisk-Open-Source/pyvcd>`_.
+Visit `PyVCD on GitHub <https://github.com/westerndigitalcorporation/pyvcd>`_.
 
 .. image:: https://readthedocs.org/projects/pyvcd/badge/?version=latest
    :target: http://pyvcd.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
-.. image:: https://github.com/SanDisk-Open-Source/pyvcd/workflows/CI/badge.svg
-   :target: https://github.com/SanDisk-Open-Source/pyvcd/actions?query=workflow%3ACI
+.. image:: https://github.com/westerndigitalcorporation/pyvcd/workflows/CI/badge.svg
+   :target: https://github.com/westerndigitalcorporation/pyvcd/actions?query=workflow%3ACI
 
-.. image:: https://coveralls.io/repos/github/SanDisk-Open-Source/pyvcd/badge.svg?branch=master
-   :target: https://coveralls.io/github/SanDisk-Open-Source/pyvcd?branch=master
+.. image:: https://coveralls.io/repos/github/westerndigitalcorporation/pyvcd/badge.svg?branch=master
+   :target: https://coveralls.io/github/westerndigitalcorporation/pyvcd?branch=master
 
 Quick Start
 -----------

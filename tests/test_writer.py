@@ -964,7 +964,7 @@ def test_vcd_string_var(capsys):
 def test_execution_speed():
     """Manual test for how fast we can write to a VCD file
 
-    See https://github.com/SanDisk-Open-Source/pyvcd/issues/9
+    See https://github.com/westerndigitalcorporation/pyvcd/issues/9
 
     pytest -vvs -k test_execution_speed
 
