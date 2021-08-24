@@ -2,7 +2,7 @@ black >= 19.10b0; implementation_name == "cpython"
 flake8
 isort >= 5.0.5
 mypy >= 0.770; implementation_name == "cpython"
-pytest
+pytest >= 6.0
 pytest-cov
 setuptools_scm
 tox

@@ -5,7 +5,7 @@ import io
 import pytest
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def gtkw():
     import vcd.gtkw
 
