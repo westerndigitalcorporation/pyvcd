@@ -7,7 +7,9 @@ Contents:
    :maxdepth: 2
 
    vcd
+   vcd.reader
    vcd.writer
+   vcd.common
    vcd.gtkw
 
 .. include:: ../README.rst
