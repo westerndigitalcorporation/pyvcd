@@ -24,36 +24,52 @@ from typing import IO, Any, Dict, Generator, List, Optional, Sequence, Tuple, Un
 class GTKWFlag(Flag):
     """These are the valid GTKWave trace flags."""
 
-    highlight = auto()  # Highlight the trace item
-    hex = auto()  # Hexadecimal data value representation
-    dec = auto()  # Decimal data value representation
-    bin = auto()  # Binary data value representation
-    oct = auto()  # Octal data value representation
-    rjustify = auto()  # Right-justify signal name/alias
+    highlight = auto()
+    "Highlight the trace item"
+
+    hex = auto()  #: Hexadecimal data value representation
+    dec = auto()  #: Decimal data value representation
+    bin = auto()  #: Binary data value representation
+    oct = auto()  #: Octal data value representation
+
+    rjustify = auto()
+    "Right-justify signal name/alias"
     invert = auto()
     reverse = auto()
     exclude = auto()
-    blank = auto()  # Used for blank, label, and/or analog height
-    signed = auto()  # Signed (2's compliment) data representation
-    ascii = auto()  # ASCII character representation
-    collapsed = auto()  # Used for closed groups
-    ftranslated = auto()  # Trace translated with filter file
-    ptranslated = auto()  # Trace translated with filter process
-    analog_step = auto()  # Show trace as discrete analog steps
-    analog_interpolated = auto()  # Show trace as analog with interpolation
-    analog_blank_stretch = auto()  # Used to extend height of analog data
-    real = auto()  # Read (floating point) data value representation
-    analog_fullscale = auto()  # Analog data scaled using full simulation time
+    blank = auto()  #: Used for blank, label, and/or analog height
+
+    signed = auto()
+    "Signed (2's compliment) data representation"
+    ascii = auto()
+    "ASCII character representation"
+
+    collapsed = auto()  #: Used for closed groups
+    ftranslated = auto()  #: Trace translated with filter file
+    ptranslated = auto()  #: Trace translated with filter process
+
+    analog_step = auto()  #: Show trace as discrete analog steps
+    analog_interpolated = auto()  #: Show trace as analog with interpolation
+    analog_blank_stretch = auto()  #: Used to extend height of analog data
+    real = auto()  #: Real (floating point) data value representation
+    analog_fullscale = auto()  #: Analog data scaled using full simulation time
     zerofill = auto()
     onefill = auto()
     closed = auto()
-    grp_begin = auto()  # Begin a group of signals
-    grp_end = auto()  # End a group of signals
+
+    grp_begin = auto()
+    "Begin a group of signals"
+    grp_end = auto()
+    "End a group of signals"
+
     bingray = auto()
     graybin = auto()
     real2bits = auto()
     ttranslated = auto()
+
     popcnt = auto()
+    "Show the population count, i.e. the number of set bits"
+
     fpdecshift = auto()
 
 
@@ -66,7 +82,9 @@ class GTKWColor(Enum):
     """
 
     cycle = -1
+    "Cycle between colors"
     normal = 0
+    "Default color"
     red = 1
     orange = 2
     yellow = 3
@@ -299,6 +317,8 @@ class GTKWSave:
         This context manager starts a new group of signal traces and ends the group when
         leaving the `with` block. E.g.:
 
+            >>> import io
+            >>> gtkw = GTKWSave(io.StringIO())
             >>> with gtkw.group('mygroup'):
             ...     gtkw.trace('a.b.x')
             ...     gtkw.trace('a.b.y')
@@ -461,12 +481,14 @@ class GTKWSave:
         This allows each individual bit of a vector signal to have its own trace (and
         trace configuration).
 
+            >>> import io
+            >>> gtkw = GTKWSave(io.StringIO())
             >>> name = 'mod.myint'
             >>> with gtkw.trace_bits(name):
             ...     gtkw.trace_bit(0, name)
             ...     gtkw.trace_bit(1, name)
             ...     gtkw.trace_bit(2, name)
-            ...     gtkw.trace_bit(3, name, 'special', color=3)
+            ...     gtkw.trace_bit(3, name, 'special', color=GTKWColor.yellow)
 
         :param str name: fully-qualified name of the vector variable to trace.
         :param str alias: optional alias to display instead of *name*.
