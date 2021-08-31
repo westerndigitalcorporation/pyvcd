@@ -6,11 +6,10 @@ import timeit
 
 import pytest
 
+from vcd.common import Timescale, TimescaleMagnitude, TimescaleUnit
 from vcd.writer import (
     CompoundVectorVariable,
     ScopeType,
-    TimescaleMagnitude,
-    TimescaleUnit,
     Variable,
     VCDPhaseError,
     VCDWriter,
@@ -36,6 +35,7 @@ def test_vcd_init(capsys):
         ((1, 'ns'), '1 ns'),
         ('100ps', '100 ps'),
         ((TimescaleMagnitude.ten, TimescaleUnit.femtosecond), '10 fs'),
+        (Timescale(TimescaleMagnitude.hundred, TimescaleUnit.millisecond), '100 ms'),
     ],
 )
 def test_vcd_timescales(capsys, timescale, expected):

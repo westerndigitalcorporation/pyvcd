@@ -63,3 +63,23 @@ class Timescale(NamedTuple):
 
     magnitude: TimescaleMagnitude
     unit: TimescaleUnit
+
+    @classmethod
+    def from_str(cls, s: str) -> 'Timescale':
+        for unit in TimescaleUnit:
+            if s == unit.value:
+                mag = TimescaleMagnitude(1)
+                break
+        else:
+            for mag in reversed(TimescaleMagnitude):
+                mag_str = str(mag.value)
+                if s.startswith(mag_str):
+                    unit_str = s[len(mag_str) :].lstrip(' ')
+                    unit = TimescaleUnit(unit_str)
+                    break
+            else:
+                raise ValueError(f'Invalid timescale magnitude {s!r}')
+        return Timescale(mag, unit)
+
+    def __str__(self) -> str:
+        return f'{self.magnitude.value} {self.unit.value}'

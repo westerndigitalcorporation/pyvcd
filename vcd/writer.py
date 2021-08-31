@@ -22,7 +22,7 @@ from typing import (
     Union,
 )
 
-from vcd.common import ScopeType, TimescaleMagnitude, TimescaleUnit, VarType
+from vcd.common import ScopeType, Timescale, TimescaleMagnitude, TimescaleUnit, VarType
 
 
 class VCDPhaseError(Exception):
@@ -37,7 +37,7 @@ class VCDPhaseError(Exception):
 ScopeTuple = Tuple[str, ...]
 ScopeInput = Union[str, Sequence[str]]
 TimeValue = Union[int, float]
-Timescale = Union[Tuple[TimescaleMagnitude, TimescaleUnit], Tuple[int, str], str]
+TimescaleLike = Union[Timescale, Tuple[int, str], str]
 CompoundSize = Sequence[int]
 VariableSize = Union[int, CompoundSize]
 
@@ -73,7 +73,7 @@ class VCDWriter:
     def __init__(
         self,
         file: IO[str],
-        timescale: Timescale = '1 us',
+        timescale: TimescaleLike = '1 us',
         date: Optional[str] = None,
         comment: str = '',
         version: str = '',
@@ -383,30 +383,18 @@ class VCDWriter:
             raise TypeError(f'Invalid scope {scope}')
 
     @classmethod
-    def _check_timescale(cls, timescale: Timescale) -> str:
-        if isinstance(timescale, (list, tuple)):
-            if len(timescale) == 2:
-                mag = TimescaleMagnitude(timescale[0])
-                unit = TimescaleUnit(timescale[1])
-            else:
+    def _check_timescale(cls, timescale: TimescaleLike) -> str:
+        if isinstance(timescale, Timescale):
+            return str(timescale)
+        elif isinstance(timescale, (list, tuple)):
+            if len(timescale) != 2:
                 raise ValueError(f'Invalid timescale {timescale}')
+            mag, unit = timescale
+            return str(Timescale(TimescaleMagnitude(mag), TimescaleUnit(unit)))
         elif isinstance(timescale, str):
-            for unit in TimescaleUnit:
-                if timescale == unit.value:
-                    mag = TimescaleMagnitude(1)
-                    break
-            else:
-                for mag in reversed(TimescaleMagnitude):
-                    mag_str = str(mag.value)
-                    if timescale.startswith(mag_str):
-                        unit_str = timescale[len(mag_str) :].lstrip(' ')
-                        unit = TimescaleUnit(unit_str)
-                        break
-                else:
-                    raise ValueError(f'Invalid timescale magnitude {timescale}')
+            return str(Timescale.from_str(timescale))
         else:
             raise TypeError(f'Invalid timescale type {type(timescale).__name__}')
-        return f'{mag.value} {unit.value}'
 
     def __enter__(self) -> 'VCDWriter':
         return self
