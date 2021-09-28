@@ -1,6 +1,12 @@
 Changelog
 =========
 
+pyvcd-0.3.0 (2021-09-28)
+------------------------
+* Add vcd.reader module for parsing VCD files
+* Various repairs to vcd.gtkw docs
+* Update setuptools and setuptools_scm requirements
+
 pyvcd-0.2.4 (2020-12-15)
 ------------------------
 * Escape special characters in (GTKWave) string vars (#17)
