@@ -25,14 +25,14 @@ copyright = '2021, Western Digital Corporation'
 author = 'Peter Grayson and Steven Sprouse'
 version = get_version(root='..', relative_to=__file__)
 # release = '0.0.1'
-language = None
+language = 'en'
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'
 todo_include_todos = False
 
 # Options for HTML output
 html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+# html_static_path = ['_static']
 htmlhelp_basename = 'pyvcddoc'
 
 # Options for LaTeX output
