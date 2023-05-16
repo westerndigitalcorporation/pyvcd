@@ -52,4 +52,4 @@ build:
 
 .PHONY: dist
 dist:
-	$(PYTHON) setup.py sdist bdist_wheel
+	$(PYTHON) -m build
