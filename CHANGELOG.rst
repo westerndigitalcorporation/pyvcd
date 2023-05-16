@@ -1,6 +1,16 @@
 Changelog
 =========
 
+pyvcd-0.4.0 (2023-05-16)
+------------------------
+* Drop official support for EOL Python 3.6 (#25)
+* Add official support for Python 3.10 and 3.11
+* Identifiers may have parens (#21)
+* Repair typing issue in vcd.gtkw.decode_flags()
+* Repair sphinx config warnings
+* Build using `build` instead of executing setup.py
+* Repair deprecated use of license_file in setup.cfg
+
 pyvcd-0.3.0 (2021-09-28)
 ------------------------
 * Add vcd.reader module for parsing VCD files
