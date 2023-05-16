@@ -82,6 +82,12 @@ def test_parse_var_decl_with_dotted_ref():
     assert token.var.ref_str == 'SomeThing.MORE_STUFF_0'
 
 
+def test_parse_var_decl_with_parens_in_ref_str():
+    tokens = tokenize(io.BytesIO(b'$var integer 8 !! an(ident) $end'))
+    token = next(tokens)
+    assert token.var.ref_str == 'an(ident)'
+
+
 def test_time_change():
     tokens = tokenize(io.BytesIO(b'#1234'))
     token = next(tokens)
