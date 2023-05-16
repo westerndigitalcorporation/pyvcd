@@ -30,7 +30,7 @@ jobs:
         python setup.py sdist bdist_wheel
 
     - name: Upload dist
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pyvcd-dist
         path: "dist/*"
