@@ -38,8 +38,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     environment:
-      - name: pypi
-      - url: https://pypi.org/p/pyvcd
+      name: pypi
+      url: https://pypi.org/p/pyvcd
     permissions:
       id-token: write
 
