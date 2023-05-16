@@ -664,7 +664,7 @@ def decode_flags(flags: Union[str, int]) -> List[str]:
         decoded = GTKWFlag(int(flags.lstrip('@'), 16))
     else:
         decoded = GTKWFlag(flags)
-    return [flag.name for flag in GTKWFlag if flag & decoded]
+    return [str(flag.name) for flag in GTKWFlag if flag & decoded]
 
 
 def spawn_gtkwave_interactive(
