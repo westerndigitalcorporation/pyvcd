@@ -68,6 +68,13 @@ def test_parse_scope_decl():
     assert token.scope.ident == 'foobar'
 
 
+def test_parse_scope_decl_with_escaped_identifier():
+    tokens = tokenize(io.BytesIO(b'$scope module \\foo.bar\\ $end'))
+    token = next(tokens)
+    assert token.scope.type_.value == 'module'
+    assert token.scope.ident == 'foo.bar\\'
+
+
 def test_parse_var_decl():
     tokens = tokenize(io.BytesIO(b'$var integer 8 ! foo [17] $end'))
     token = next(tokens)
