@@ -22,7 +22,7 @@ parses a binary VCD stream, yielding tokens as they are encountered.
 import io
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterator, NamedTuple, Optional, Tuple, Union
+from typing import Iterator, List, NamedTuple, Optional, Tuple, Union
 
 from vcd.common import ScopeType, Timescale, TimescaleMagnitude, TimescaleUnit, VarType
 
@@ -384,20 +384,25 @@ class _TokenizerState:
             raise VCDParseError(self.loc, 'Expected id code')
 
     def take_identifier(self) -> str:
-        # TODO: handle escaped identifiers
-        identifier = []
         c = self.buf[self.pos]
 
-        # Identifiers must start with letter or underscore
+        # Simple identifiers must start with letter or underscore
         if (
             65 <= c <= 90  # 'A' <= c <= 'Z'
             or 97 <= c <= 122  # 'a' - 'z'
             or c == 95  # '_'
         ):
-            identifier.append(c)
-            c = self.advance()
+            identifier = self.take_simple_identifier()
+        elif c == 92:  # '\'
+            identifier = self.take_escaped_identifier()
         else:
-            raise VCDParseError(self.loc, 'Identifier must start with a-zA-Z_')
+            raise VCDParseError(self.loc, 'Simple identifier must start with a-zA-Z_')
+
+        return bytes(identifier).decode('ascii')
+
+    def take_simple_identifier(self) -> List[int]:
+        identifier = [self.buf[self.pos]]
+        c = self.advance()
 
         while (
             48 <= c <= 57  # '0' - '9'
@@ -412,7 +417,21 @@ class _TokenizerState:
             identifier.append(c)
             c = self.advance(raise_on_eof=False)
 
-        return bytes(identifier).decode('ascii')
+        return identifier
+
+    def take_escaped_identifier(self) -> List[int]:
+        identifier = []
+        c = self.advance()
+        while c not in (9, 10, 32):  # '\t', '\n', ' '
+            if c < 33 or c > 126:  # printable ASCII characters
+                raise VCDParseError(
+                    self.loc,
+                    'Escaped identifier can only contain printable ASCII characters',
+                )
+            identifier.append(c)
+            c = self.advance()
+
+        return identifier
 
     def take_bit_index(self) -> Union[int, Tuple[int, int]]:
         self.skip_ws()
