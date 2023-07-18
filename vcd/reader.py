@@ -610,8 +610,8 @@ def _parse_token(s: _TokenizerState) -> Token:
             s.skip_ws()
 
             scope_ident = s.take_identifier()
-            if s.buf[s.pos] == 40: # (
-                # get scope like this $scope begin scope_name(432) $end which is out of spec but seen in vcd dump
+            if s.buf[s.pos] in [40, 91]: # ( [
+                # get scope like this $scope begin scope_name(432) or scope_name[432] $end which is out of spec but seen in vcd dump
                 s.advance()
                 dec = s.take_decimal()
                 s.advance() #skip )
