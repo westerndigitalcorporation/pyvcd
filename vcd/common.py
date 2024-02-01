@@ -34,6 +34,7 @@ class VarType(Enum):
     wire = 'wire'
     wor = 'wor'
     string = 'string'
+    logic = 'logic'
 
     def __str__(self) -> str:
         return self.value
