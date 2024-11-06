@@ -64,7 +64,7 @@ class VarDecl(NamedTuple):
     type_: VarType  #: Type of variable
     size: int  #: Size, in bits, of variable
     id_code: str
-    """Identifer code of variable.
+    """Identifier code of variable.
 
     This code is used in subsequent value change descriptors
     to map-back to this variable declaration."""
