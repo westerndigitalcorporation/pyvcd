@@ -1,6 +1,15 @@
 Changelog
 =========
 
+pyvcd-0.4.1 (2024-11-10)
+------------------------
+* feat: support escaped identifiers (#27)
+* feat: add `VarType.logic` used by Verilator (#30)
+* feat: make some `VCDReader` exceptions unchained
+* docs: typo in `VarDecl.id_code` docstring (#34)
+* docs: official support for Python 3.12 and 3.13
+* test: fix dumpfile_mtime tests
+
 pyvcd-0.4.0 (2023-05-16)
 ------------------------
 * Drop official support for EOL Python 3.6 (#25)
