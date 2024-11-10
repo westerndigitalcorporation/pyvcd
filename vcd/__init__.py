@@ -11,4 +11,4 @@
 from .reader import tokenize
 from .writer import VCDPhaseError, VCDWriter
 
-__all__ = ('VCDWriter', 'VCDPhaseError', 'tokenize')
+__all__ = ("VCDWriter", "VCDPhaseError", "tokenize")

@@ -1,4 +1,4 @@
-'''Read Value Change Dump (VCD) files.
+"""Read Value Change Dump (VCD) files.
 
 The primary interface is the :func:`tokenize()` generator function,
 parses a binary VCD stream, yielding tokens as they are encountered.
@@ -11,13 +11,13 @@ parses a binary VCD stream, yielding tokens as they are encountered.
    >>> tokens = tokenize(io.BytesIO(vcd))
    >>> token = next(tokens)
    >>> assert token.kind is TokenKind.DATE
-   >>> assert token.date == 'today'
+   >>> assert token.date == "today"
    >>> token = next(tokens)
    >>> assert token.kind is TokenKind.TIMESCALE
    >>> assert token.timescale.magnitude.value == 1
-   >>> assert token.timescale.unit.value == 'ns'
+   >>> assert token.timescale.unit.value == "ns"
 
-'''
+"""
 
 import io
 from dataclasses import dataclass
@@ -86,9 +86,9 @@ class VarDecl(NamedTuple):
         if self.bit_index is None:
             return self.reference
         elif isinstance(self.bit_index, int):
-            return f'{self.reference}[{self.bit_index}]'
+            return f"{self.reference}[{self.bit_index}]"
         else:
-            return f'{self.reference}[{self.bit_index[0]}:{self.bit_index[1]}]'
+            return f"{self.reference}[{self.bit_index[0]}:{self.bit_index[1]}]"
 
 
 class ScopeDecl(NamedTuple):
@@ -286,7 +286,7 @@ class VCDParseError(Exception):
     """Catch-all error for any VCD parsing errors."""
 
     def __init__(self, loc: Location, msg: str) -> None:
-        super().__init__(f'{loc.line}:{loc.column}: {msg}')
+        super().__init__(f"{loc.line}:{loc.column}: {msg}")
         self.loc = loc
         "Location within VCD file where error was detected."
 
@@ -359,7 +359,7 @@ class _TokenizerState:
         if _is_ws(self.buf[self.pos]):
             self.advance()
         else:
-            raise VCDParseError(self.loc, f'Expected whitespace after identifier ${kw}')
+            raise VCDParseError(self.loc, f"Expected whitespace after identifier ${kw}")
 
     def take_decimal(self) -> int:
         digits = []
@@ -370,7 +370,7 @@ class _TokenizerState:
         if digits:
             return int(bytes(digits))
         else:
-            raise VCDParseError(self.loc, 'Expected decimal value')
+            raise VCDParseError(self.loc, "Expected decimal value")
 
     def take_id_code(self) -> str:
         printables = []
@@ -379,9 +379,9 @@ class _TokenizerState:
             printables.append(c)
             c = self.advance(raise_on_eof=False)
         if printables:
-            return bytes(printables).decode('ascii')
+            return bytes(printables).decode("ascii")
         else:
-            raise VCDParseError(self.loc, 'Expected id code')
+            raise VCDParseError(self.loc, "Expected id code")
 
     def take_identifier(self) -> str:
         c = self.buf[self.pos]
@@ -396,9 +396,9 @@ class _TokenizerState:
         elif c == 92:  # '\'
             identifier = self.take_escaped_identifier()
         else:
-            raise VCDParseError(self.loc, 'Simple identifier must start with a-zA-Z_')
+            raise VCDParseError(self.loc, "Simple identifier must start with a-zA-Z_")
 
-        return bytes(identifier).decode('ascii')
+        return bytes(identifier).decode("ascii")
 
     def take_simple_identifier(self) -> List[int]:
         identifier = [self.buf[self.pos]]
@@ -426,7 +426,7 @@ class _TokenizerState:
             if c < 33 or c > 126:  # printable ASCII characters
                 raise VCDParseError(
                     self.loc,
-                    'Escaped identifier can only contain printable ASCII characters',
+                    "Escaped identifier can only contain printable ASCII characters",
                 )
             identifier.append(c)
             c = self.advance()
@@ -473,9 +473,9 @@ class _TokenizerState:
 
         if len(chars) > 4 and not _is_ws(chars[-5]):
             loc = Location(self.lineno, self.column - min(len(chars), 5))
-            raise VCDParseError(loc, 'Expected whitespace before $end')
+            raise VCDParseError(loc, "Expected whitespace before $end")
 
-        return bytes(chars[:-5]).decode('ascii')
+        return bytes(chars[:-5]).decode("ascii")
 
     def take_end(self) -> None:
         if (
@@ -484,7 +484,7 @@ class _TokenizerState:
             or self.advance() != 110  # 'n'
             or self.advance() != 100  # 'd'
         ):
-            raise VCDParseError(self.loc, 'Expected $end')
+            raise VCDParseError(self.loc, "Expected $end")
 
 
 def _is_ws(c: int) -> bool:
@@ -525,12 +525,12 @@ def _parse_token(s: _TokenizerState) -> Token:
             ):  # c in '01zZxX'
                 vector.append(c)
                 c = s.advance()
-            vector_value = bytes(vector).decode('ascii')
+            vector_value = bytes(vector).decode("ascii")
         else:
             vector_value = int(bytes(vector), 2)
 
         if not _is_ws(c):
-            raise VCDParseError(s.loc, 'Expected whitespace after vector value')
+            raise VCDParseError(s.loc, "Expected whitespace after vector value")
 
         s.skip_ws()
 
@@ -552,7 +552,7 @@ def _parse_token(s: _TokenizerState) -> Token:
             real = float(bytes(real_digits))
         except ValueError:
             real_str = bytes(real_digits).decode("ascii")
-            raise VCDParseError(start, f'Expected real value, got: {real_str}')
+            raise VCDParseError(start, f"Expected real value, got: {real_str}")
 
         s.skip_ws()
 
@@ -567,7 +567,7 @@ def _parse_token(s: _TokenizerState) -> Token:
             c = s.advance()
         s.skip_ws()
         id_code = s.take_id_code()
-        string_value = bytes(chars).decode('ascii')
+        string_value = bytes(chars).decode("ascii")
         return Token(
             TokenKind.CHANGE_STRING, s.span(start), StringChange(id_code, string_value)
         )
@@ -575,26 +575,26 @@ def _parse_token(s: _TokenizerState) -> Token:
         s.advance()
         kw = s.take_identifier()
 
-        if kw == 'comment':
+        if kw == "comment":
             s.take_ws_after_kw(kw)
             comment = s.take_to_end()
             return Token(TokenKind.COMMENT, s.span(start), comment)
-        elif kw == 'date':
+        elif kw == "date":
             s.take_ws_after_kw(kw)
             date_str = s.take_to_end()
             return Token(TokenKind.DATE, s.span(start), date_str)
-        elif kw == 'enddefinitions':
+        elif kw == "enddefinitions":
             s.take_ws_after_kw(kw)
             s.take_end()
             return Token(TokenKind.ENDDEFINITIONS, s.span(start), None)
-        elif kw == 'scope':
+        elif kw == "scope":
             s.take_ws_after_kw(kw)
             s.skip_ws()
             identifier = s.take_identifier()
             try:
                 scope_type = ScopeType(identifier)
             except ValueError:
-                raise VCDParseError(s.loc, f'Invalid $scope type: {identifier}')
+                raise VCDParseError(s.loc, f"Invalid $scope type: {identifier}")
 
             s.skip_ws()
 
@@ -605,7 +605,7 @@ def _parse_token(s: _TokenizerState) -> Token:
             scope_decl = ScopeDecl(scope_type, scope_ident)
 
             return Token(TokenKind.SCOPE, s.span(start), scope_decl)
-        elif kw == 'timescale':
+        elif kw == "timescale":
             s.take_ws_after_kw(kw)
             s.skip_ws()
             mag_int = s.take_decimal()
@@ -613,11 +613,11 @@ def _parse_token(s: _TokenizerState) -> Token:
             try:
                 magnitude = TimescaleMagnitude(mag_int)
             except ValueError:
-                valid_magnitudes = ', '.join(str(m.value) for m in TimescaleMagnitude)
+                valid_magnitudes = ", ".join(str(m.value) for m in TimescaleMagnitude)
                 raise VCDParseError(
                     s.loc,
-                    f'Invalid $timescale magnitude: {mag_int}. '
-                    f'Must be one of: {valid_magnitudes}.',
+                    f"Invalid $timescale magnitude: {mag_int}. "
+                    f"Must be one of: {valid_magnitudes}.",
                 )
 
             s.skip_ws()
@@ -625,32 +625,32 @@ def _parse_token(s: _TokenizerState) -> Token:
             try:
                 unit = TimescaleUnit(unit_str)
             except ValueError:
-                valid_units = ', '.join(u.value for u in TimescaleUnit)
+                valid_units = ", ".join(u.value for u in TimescaleUnit)
                 raise VCDParseError(
                     s.loc,
-                    f'Invalid $timescale unit: {unit_str}. '
-                    f'Must be one of: {valid_units}.',
+                    f"Invalid $timescale unit: {unit_str}. "
+                    f"Must be one of: {valid_units}.",
                 )
 
             s.take_end()
 
             timescale = Timescale(magnitude, unit)
             return Token(TokenKind.TIMESCALE, s.span(start), timescale)
-        elif kw == 'upscope':
+        elif kw == "upscope":
             s.take_ws_after_kw(kw)
             s.take_end()
             return Token(TokenKind.UPSCOPE, s.span(start), None)
-        elif kw == 'var':
+        elif kw == "var":
             s.take_ws_after_kw(kw)
             s.skip_ws()
             type_str = s.take_identifier()
             try:
                 type_ = VarType(type_str)
             except ValueError:
-                valid_types = ', '.join(t.value for t in VarType)
+                valid_types = ", ".join(t.value for t in VarType)
                 raise VCDParseError(
                     s.loc,
-                    f'Invalid $var type: {type_str}. Must be one of: {valid_types}',
+                    f"Invalid $var type: {type_str}. Must be one of: {valid_types}",
                 )
 
             s.skip_ws()
@@ -671,21 +671,21 @@ def _parse_token(s: _TokenizerState) -> Token:
             s.take_end()
             var_decl = VarDecl(type_, size, id_code, ident, bit_index)
             return Token(TokenKind.VAR, s.span(start), var_decl)
-        elif kw == 'version':
+        elif kw == "version":
             s.take_ws_after_kw(kw)
             version = s.take_to_end()
             return Token(TokenKind.VERSION, s.span(start), version)
-        elif kw == 'dumpall':
+        elif kw == "dumpall":
             return Token(TokenKind.DUMPALL, s.span(start), None)
-        elif kw == 'dumpoff':
+        elif kw == "dumpoff":
             return Token(TokenKind.DUMPOFF, s.span(start), None)
-        elif kw == 'dumpon':
+        elif kw == "dumpon":
             return Token(TokenKind.DUMPON, s.span(start), None)
-        elif kw == 'dumpvars':
+        elif kw == "dumpvars":
             return Token(TokenKind.DUMPVARS, s.span(start), None)
-        elif kw == 'end':
+        elif kw == "end":
             return Token(TokenKind.END, s.span(start), None)
         else:
-            raise VCDParseError(s.loc, f'invalid keyword ${kw}')
+            raise VCDParseError(s.loc, f"invalid keyword ${kw}")
     else:
-        raise VCDParseError(s.loc, f'confused: {chr(c)}')
+        raise VCDParseError(s.loc, f"confused: {chr(c)}")

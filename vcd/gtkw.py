@@ -121,7 +121,7 @@ class GTKWSave:
 
     def __init__(self, savefile: IO[str]) -> None:
         self.file = savefile
-        self.path = getattr(savefile, 'name', None)
+        self.path = getattr(savefile, "name", None)
         self._flags = GTKWFlag(0)
         self._color_stack = [GTKWColor.normal]
         self._filter_files: List[str] = []
@@ -132,15 +132,15 @@ class GTKWSave:
 
     def _set_flags(self, flags: GTKWFlag) -> None:
         if flags != self._flags:
-            self._p(f'@{flags.value:x}')
+            self._p(f"@{flags.value:x}")
             self._flags = flags
 
     def _set_color(self, color: Optional[Union[GTKWColor, str, int]]) -> None:
         if color is not None:
             if not isinstance(color, GTKWColor):
                 warnings.warn(
-                    'Using str and int for colors is deprecated. '
-                    'Use vcd.gtkw.GTKWColor instead.',
+                    "Using str and int for colors is deprecated. "
+                    "Use vcd.gtkw.GTKWColor instead.",
                     DeprecationWarning,
                     stacklevel=2,
                 )
@@ -155,7 +155,7 @@ class GTKWSave:
                 self._color_stack[-1] = self._color_stack[-1]._cycle()
             else:
                 self._color_stack[-1] = color
-            self._p(f'[color] {self._color_stack[-1].value}')
+            self._p(f"[color] {self._color_stack[-1].value}")
 
     def _set_translate_filter_file(self, filter_path: Optional[str]) -> None:
         if filter_path:
@@ -164,7 +164,7 @@ class GTKWSave:
             except ValueError:
                 self._filter_files.append(filter_path)
                 filter_id = len(self._filter_files)
-            self._p(f'^{filter_id} {filter_path}')
+            self._p(f"^{filter_id} {filter_path}")
 
     def _set_translate_filter_proc(self, proc_path: Optional[str]) -> None:
         if proc_path:
@@ -173,12 +173,12 @@ class GTKWSave:
             except ValueError:
                 self._filter_procs.append(proc_path)
                 filter_id = len(self._filter_procs)
-            self._p(f'^>{filter_id} {proc_path}')
+            self._p(f"^>{filter_id} {proc_path}")
 
     def comment(self, *comments: Sequence[str]) -> None:
         """Add comment line(s) to save file."""
         for comment in comments:
-            self._p('[*]', comment)
+            self._p("[*]", comment)
 
     def dumpfile(self, dump_path: str, abspath: bool = True) -> None:
         """Add VCD dump file path to save file.
@@ -199,7 +199,7 @@ class GTKWSave:
 
         """
         if dump_path is None:
-            self._p('[dumpfile] (null)')
+            self._p("[dumpfile] (null)")
         else:
             if abspath:
                 dump_path = os.path.abspath(dump_path)
@@ -215,7 +215,7 @@ class GTKWSave:
         Configuring the dump file's modification time is optional.
 
         """
-        time_format = '%a %b %d %H:%M:%S %Y'
+        time_format = "%a %b %d %H:%M:%S %Y"
         if mtime is None:
             assert isinstance(dump_path, str)
             mtime = os.stat(dump_path).st_mtime
@@ -226,7 +226,7 @@ class GTKWSave:
         elif isinstance(mtime, datetime.datetime):
             mtime_str = mtime.strftime(time_format)
         else:
-            raise TypeError(f'Invalid mtime type ({type(mtime)})')
+            raise TypeError(f"Invalid mtime type ({type(mtime)})")
         self._p(f'[dumpfile_mtime] "{mtime_str}"')
 
     def dumpfile_size(
@@ -240,7 +240,7 @@ class GTKWSave:
         if size is None:
             assert isinstance(dump_path, str)
             size = os.stat(dump_path).st_size
-        self._p(f'[dumpfile_size] {size}')
+        self._p(f"[dumpfile_size] {size}")
 
     def savefile(self, save_path: Optional[str] = None, abspath: bool = True) -> None:
         """Add the path of the save file to the save file.
@@ -254,7 +254,7 @@ class GTKWSave:
 
         """
         if save_path is None and self.path is None:
-            self._p('[savefile] (null)')
+            self._p("[savefile] (null)")
         else:
             if save_path is None:
                 save_path = self.path
@@ -264,24 +264,24 @@ class GTKWSave:
 
     def timestart(self, timestamp: int = 0) -> None:
         """Add simulation start time to the save file."""
-        self._p(f'[timestart] {timestamp}')
+        self._p(f"[timestart] {timestamp}")
 
     def zoom_markers(
         self, zoom: float = 0.0, marker: int = -1, **kwargs: Dict[str, int]
     ) -> None:
         """Set zoom, primary marker, and markers 'a' - 'z'."""
         self._p(
-            f'*{zoom:.6f} {marker}',
-            *[kwargs.get(k, -1) for k in 'abcdefghijklmnopqrstuvwxyz'],
+            f"*{zoom:.6f} {marker}",
+            *[kwargs.get(k, -1) for k in "abcdefghijklmnopqrstuvwxyz"],
         )
 
     def size(self, width: int, height: int) -> None:
         """Set GTKWave window size."""
-        self._p(f'[size] {width} {height}')
+        self._p(f"[size] {width} {height}")
 
     def pos(self, x: int = -1, y: int = -1) -> None:
         """Set GTKWave window position."""
-        self._p(f'[pos] {x} {y}')
+        self._p(f"[pos] {x} {y}")
 
     def treeopen(self, tree: str) -> None:
         """Start with *tree* open in Signal Search Tree (SST).
@@ -292,22 +292,22 @@ class GTKWSave:
         :param str tree: scope/path/tree to be opened in GTKWave's SST frame.
 
         """
-        if tree[-1] == '.':
-            self._p(f'[treeopen] {tree}')
+        if tree[-1] == ".":
+            self._p(f"[treeopen] {tree}")
         else:
-            self._p(f'[treeopen] {tree}.')
+            self._p(f"[treeopen] {tree}.")
 
     def signals_width(self, width: int) -> None:
         """Set width of Signals frame."""
-        self._p(f'[signals_width] {width}')
+        self._p(f"[signals_width] {width}")
 
     def sst_expanded(self, is_expanded: bool) -> None:
         """Set whether Signal Search Tree (SST) frame is expanded."""
-        self._p(f'[sst_expanded] {int(bool(is_expanded))}')
+        self._p(f"[sst_expanded] {int(bool(is_expanded))}")
 
     def pattern_trace(self, is_enabled: bool) -> None:
         """Enable/disable pattern trace."""
-        self._p(f'[pattern_trace] {int(bool(is_enabled))}')
+        self._p(f"[pattern_trace] {int(bool(is_enabled))}")
 
     @contextmanager
     def group(
@@ -320,10 +320,10 @@ class GTKWSave:
 
             >>> import io
             >>> gtkw = GTKWSave(io.StringIO())
-            >>> with gtkw.group('mygroup'):
-            ...     gtkw.trace('a.b.x')
-            ...     gtkw.trace('a.b.y')
-            ...     gtkw.trace('a.b.z')
+            >>> with gtkw.group("mygroup"):
+            ...     gtkw.trace("a.b.x")
+            ...     gtkw.trace("a.b.y")
+            ...     gtkw.trace("a.b.z")
 
         :param str name: the name/label of the trace group.
         :param bool closed: group should be closed at GTKWave startup.
@@ -355,7 +355,7 @@ class GTKWSave:
         if highlight:
             flags |= GTKWFlag.highlight
         self._set_flags(flags)
-        self._p(f'-{name}')
+        self._p(f"-{name}")
         self._color_stack.append(GTKWColor.normal)
 
     def end_group(
@@ -377,11 +377,11 @@ class GTKWSave:
         if highlight:
             flags |= GTKWFlag.highlight
         self._set_flags(flags)
-        self._p(f'-{name}')
+        self._p(f"-{name}")
         self._color_stack.pop(-1)
 
     def blank(
-        self, label: str = '', analog_extend: bool = False, highlight: bool = False
+        self, label: str = "", analog_extend: bool = False, highlight: bool = False
     ) -> None:
         """Add blank or label to trace signals list.
 
@@ -397,14 +397,14 @@ class GTKWSave:
         if highlight:
             flags |= GTKWFlag.highlight
         self._set_flags(flags)
-        self._p(f'-{label}')
+        self._p(f"-{label}")
 
     def trace(
         self,
         name: str,
         alias: Optional[str] = None,
         color: Optional[Union[GTKWColor, str, int]] = None,
-        datafmt: str = 'hex',
+        datafmt: str = "hex",
         highlight: bool = False,
         rjustify: bool = True,
         extraflags: Union[GTKWFlag, Optional[Sequence[str]]] = GTKWFlag(0),
@@ -433,15 +433,15 @@ class GTKWSave:
             GTKWave versions after 3.3.64 do not use bit-range suffixes.
 
         """
-        if datafmt not in ['hex', 'dec', 'bin', 'oct', 'ascii', 'real', 'signed']:
-            raise ValueError(f'Invalid datafmt ({datafmt})')
+        if datafmt not in ["hex", "dec", "bin", "oct", "ascii", "real", "signed"]:
+            raise ValueError(f"Invalid datafmt ({datafmt})")
         flags = GTKWFlag.__members__[datafmt]
         if isinstance(extraflags, GTKWFlag):
             flags |= extraflags
         else:
             warnings.warn(
-                'Using Optional[Sequence[str]] for extraflags is deprecated. '
-                'Use vcd.gtkw.GTKWFlag instead.',
+                "Using Optional[Sequence[str]] for extraflags is deprecated. "
+                "Use vcd.gtkw.GTKWFlag instead.",
                 DeprecationWarning,
             )
             if extraflags is not None:
@@ -461,7 +461,7 @@ class GTKWSave:
         self._set_translate_filter_file(translate_filter_file)
         self._set_translate_filter_proc(translate_filter_proc)
         if alias:
-            self._p(f'+{{{alias}}} ', end='')
+            self._p(f"+{{{alias}}} ", end="")
         self._p(name)
 
     @contextmanager
@@ -470,7 +470,7 @@ class GTKWSave:
         name: str,
         alias: Optional[str] = None,
         color: Optional[Union[str, int]] = None,
-        datafmt: str = 'hex',
+        datafmt: str = "hex",
         highlight: bool = False,
         rjustify: bool = True,
         extraflags: Union[GTKWFlag, Optional[Sequence[str]]] = GTKWFlag(0),
@@ -484,12 +484,12 @@ class GTKWSave:
 
             >>> import io
             >>> gtkw = GTKWSave(io.StringIO())
-            >>> name = 'mod.myint'
+            >>> name = "mod.myint"
             >>> with gtkw.trace_bits(name):
             ...     gtkw.trace_bit(0, name)
             ...     gtkw.trace_bit(1, name)
             ...     gtkw.trace_bit(2, name)
-            ...     gtkw.trace_bit(3, name, 'special', color=GTKWColor.yellow)
+            ...     gtkw.trace_bit(3, name, "special", color=GTKWColor.yellow)
 
         :param str name: fully-qualified name of the vector variable to trace.
         :param str alias: optional alias to display instead of *name*.
@@ -518,8 +518,8 @@ class GTKWSave:
             flags |= extraflags
         else:
             warnings.warn(
-                'Using Optional[Sequence[str]] for extraflags is deprecated. '
-                'Use vcd.gtkw.GTKWFlag instead.',
+                "Using Optional[Sequence[str]] for extraflags is deprecated. "
+                "Use vcd.gtkw.GTKWFlag instead.",
                 DeprecationWarning,
             )
             if extraflags is not None:
@@ -538,7 +538,7 @@ class GTKWSave:
             if highlight:
                 flags |= GTKWFlag.highlight
             self._set_flags(flags)
-            self._p('-group_end')
+            self._p("-group_end")
 
     def trace_bit(
         self,
@@ -559,8 +559,8 @@ class GTKWSave:
         """
         self._set_color(color)
         if alias:
-            self._p(f'+{{{alias}}} ', end='')
-        self._p(f'({index}){name}')
+            self._p(f"+{{{alias}}} ", end="")
+        self._p(f"({index}){name}")
 
 
 TranslationType = Union[
@@ -570,7 +570,7 @@ TranslationType = Union[
 
 def make_translation_filter(
     translations: Sequence[Tuple[Any, ...]],
-    datafmt: str = 'hex',
+    datafmt: str = "hex",
     size: Optional[int] = None,
 ) -> str:
     """Create translation filter.
@@ -594,33 +594,33 @@ def make_translation_filter(
     """
     if datafmt == "hex":
         assert isinstance(size, int)
-        value_format = f'0{int(math.ceil(size / 4))}x'
-    elif datafmt == 'oct':
+        value_format = f"0{int(math.ceil(size / 4))}x"
+    elif datafmt == "oct":
         assert isinstance(size, int)
-        value_format = f'0{int(math.ceil(size / 3))}o'
-    elif datafmt in ['dec', 'signed']:
-        value_format = 'd'
-    elif datafmt == 'bin':
+        value_format = f"0{int(math.ceil(size / 3))}o"
+    elif datafmt in ["dec", "signed"]:
+        value_format = "d"
+    elif datafmt == "bin":
         assert isinstance(size, int)
-        value_format = f'0{size}b'
-    elif datafmt == 'real':
-        value_format = '.16g'
-    elif datafmt == 'ascii':
+        value_format = f"0{size}b"
+    elif datafmt == "real":
+        value_format = ".16g"
+    elif datafmt == "ascii":
         value_format = ""
         ascii_translations = []
         for translation in translations:
             value = translation[0]
             rest = list(translation[1:])
             if isinstance(value, int):
-                value = bytes((value,)).decode('ascii')
+                value = bytes((value,)).decode("ascii")
             elif not isinstance(value, str):
-                raise TypeError(f'Invalid type ({type(value)}) for ascii translation')
+                raise TypeError(f"Invalid type ({type(value)}) for ascii translation")
             elif len(value) != 1:
                 raise ValueError(f'Invalid ascii string "{value}"')
             ascii_translations.append(tuple([value] + rest))
         translations = ascii_translations
     else:
-        raise ValueError(f'invalid datafmt ({datafmt})')
+        raise ValueError(f"invalid datafmt ({datafmt})")
 
     lines = []
 
@@ -631,11 +631,11 @@ def make_translation_filter(
         else:
             value, label, color = translation
 
-        if datafmt in ['hex', 'oct', 'bin']:
+        if datafmt in ["hex", "oct", "bin"]:
             assert isinstance(size, int)
             max_val = 1 << size
             if -value > (max_val >> 1) or value >= max_val:
-                raise ValueError(f'Value ({value}) not representable in {size} bits')
+                raise ValueError(f"Value ({value}) not representable in {size} bits")
             if value < 0:
                 # Two's compliment treatment
                 value += 1 << size
@@ -643,11 +643,11 @@ def make_translation_filter(
         value_str = format(value, value_format)
 
         if color is None:
-            lines.append(f'{value_str} {label}')
+            lines.append(f"{value_str} {label}")
         else:
-            lines.append(f'{value_str} ?{color}?{label}')
+            lines.append(f"{value_str} ?{color}?{label}")
 
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def decode_flags(flags: Union[str, int]) -> List[str]:
@@ -662,7 +662,7 @@ def decode_flags(flags: Union[str, int]) -> List[str]:
 
     """
     if isinstance(flags, str):
-        decoded = GTKWFlag(int(flags.lstrip('@'), 16))
+        decoded = GTKWFlag(int(flags.lstrip("@"), 16))
     else:
         decoded = GTKWFlag(flags)
     return [str(flag.name) for flag in GTKWFlag if flag & decoded]
@@ -711,7 +711,7 @@ def spawn_gtkwave_interactive(
         if not tail_pid:
             os.close(shmidcat_rd_fd)
             os.dup2(tail_wr_fd, stdout_fd)
-            os.execlp('tail', 'tail', '-n', '+0', '-f', dump_path)
+            os.execlp("tail", "tail", "-n", "+0", "-f", dump_path)
 
         os.close(tail_wr_fd)
         gtkwave_rd_fd, shmidcat_wr_fd = os.pipe()
@@ -721,7 +721,7 @@ def spawn_gtkwave_interactive(
             os.close(gtkwave_rd_fd)
             os.dup2(shmidcat_rd_fd, stdin_fd)
             os.dup2(shmidcat_wr_fd, stdout_fd)
-            os.execlp('shmidcat', 'shmidcat')
+            os.execlp("shmidcat", "shmidcat")
 
         os.close(shmidcat_rd_fd)
         os.close(shmidcat_wr_fd)
@@ -730,10 +730,10 @@ def spawn_gtkwave_interactive(
         if not gtkwave_pid:
             os.dup2(gtkwave_rd_fd, stdin_fd)
             if quiet:
-                devnull = open(os.devnull, 'w')
+                devnull = open(os.devnull, "w")
                 os.dup2(devnull.fileno(), stdout_fd)
                 os.dup2(devnull.fileno(), stderr_fd)
-            os.execlp('gtkwave', 'gtkwave', '--vcd', '--interactive', save_path)
+            os.execlp("gtkwave", "gtkwave", "--vcd", "--interactive", save_path)
 
         # The first forked process exists to do this cleanup...
         os.waitpid(gtkwave_pid, 0)

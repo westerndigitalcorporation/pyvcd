@@ -74,21 +74,21 @@ class VCDWriter:
     def __init__(
         self,
         file: IO[str],
-        timescale: TimescaleLike = '1 us',
+        timescale: TimescaleLike = "1 us",
         date: Optional[str] = None,
-        comment: str = '',
-        version: str = '',
+        comment: str = "",
+        version: str = "",
         default_scope_type: Union[ScopeType, str] = ScopeType.module,
-        scope_sep: str = '.',
+        scope_sep: str = ".",
         check_values: bool = True,
         init_timestamp: TimeValue = 0,
     ) -> None:
         self._ofile = file
         self._header_keywords = {
-            '$timescale': self._check_timescale(timescale),
-            '$date': str(datetime.now()) if date is None else date,
-            '$comment': comment,
-            '$version': version,
+            "$timescale": self._check_timescale(timescale),
+            "$date": str(datetime.now()) if date is None else date,
+            "$comment": comment,
+            "$version": version,
         }
         self._default_scope_type = ScopeType(default_scope_type)
         self._scope_sep = scope_sep
@@ -129,7 +129,7 @@ class VCDWriter:
         var_type: Union[VarType, str],
         size: Optional[VariableSize] = None,
         init: VarValue = None,
-    ) -> 'Variable':
+    ) -> "Variable":
         """Register a new VCD variable.
 
         All VCD variables must be registered prior to any value changes.
@@ -155,9 +155,9 @@ class VCDWriter:
 
         """
         if self._closed:
-            raise VCDPhaseError('Cannot register after close().')
+            raise VCDPhaseError("Cannot register after close().")
         elif not self._registering:
-            raise VCDPhaseError('Cannot register after time 0.')
+            raise VCDPhaseError("Cannot register after time 0.")
         var_type = VarType(var_type)
 
         scope_tuple = self._get_scope_tuple(scope)
@@ -165,7 +165,7 @@ class VCDWriter:
         scope_names = self._scope_var_names.setdefault(scope_tuple, set())
         if name in scope_names:
             raise KeyError(
-                f'Duplicate var {name} in scope {self._scope_sep.join(scope_tuple)}'
+                f"Duplicate var {name} in scope {self._scope_sep.join(scope_tuple)}"
             )
 
         if size is None:
@@ -174,7 +174,7 @@ class VCDWriter:
             elif var_type in [VarType.event, VarType.string]:
                 size = 1
             else:
-                raise ValueError(f'Must supply size for {var_type} var_type')
+                raise ValueError(f"Must supply size for {var_type} var_type")
 
         if isinstance(size, Sequence):
             size = tuple(size)
@@ -184,48 +184,48 @@ class VCDWriter:
 
         ident = _encode_identifier(self._next_var_id)
 
-        var_str = f'$var {var_type} {var_size} {ident} {name} $end'
+        var_str = f"$var {var_type} {var_size} {ident} {name} $end"
 
         var: Variable
         if var_type == VarType.string:
             if init is None:
-                init = ''
+                init = ""
             elif not isinstance(init, str):
-                raise ValueError('string init value must be str')
+                raise ValueError("string init value must be str")
             var = StringVariable(ident, var_type, size, init)
         elif var_type == VarType.event:
             if init is None:
                 init = True
             elif not isinstance(init, (bool, int)):
-                raise ValueError('event init value must be int, bool, or None')
+                raise ValueError("event init value must be int, bool, or None")
             var = EventVariable(ident, var_type, size, init)
         elif var_type == VarType.real:
             if init is None:
                 init = 0.0
             elif not isinstance(init, (float, int)):
-                raise ValueError('real init value must be float, int, or None')
+                raise ValueError("real init value must be float, int, or None")
             var = RealVariable(ident, var_type, size, init)
         elif size == 1:
             if init is None:
-                init = 'x'
+                init = "x"
             elif not isinstance(init, (int, bool, str)):
-                raise ValueError('scalar init value must be int, bool, str, or None')
+                raise ValueError("scalar init value must be int, bool, str, or None")
             var = ScalarVariable(ident, var_type, size, init)
         elif isinstance(size, tuple):
             if init is None:
-                init = tuple('x' * len(size))
+                init = tuple("x" * len(size))
             elif not isinstance(init, Sequence):
-                raise ValueError('compount init value must be a sequence')
+                raise ValueError("compount init value must be a sequence")
             elif len(init) != len(size):
-                raise ValueError('compound init value must be same length as size')
+                raise ValueError("compound init value must be same length as size")
             elif not all(isinstance(v, (int, bool, str)) for v in init):
-                raise ValueError('compound init values must be int, bool, or str')
+                raise ValueError("compound init values must be int, bool, or str")
             var = CompoundVectorVariable(ident, var_type, size, init)
         else:
             if init is None:
-                init = 'x'
+                init = "x"
             elif not isinstance(init, (int, bool, str)):
-                raise ValueError('vector init value must be int, bool, str, or None')
+                raise ValueError("vector init value must be int, bool, str, or None")
             var = VectorVariable(ident, var_type, size, init)
 
         var.format_value(init, check=True)
@@ -238,7 +238,7 @@ class VCDWriter:
 
         return var
 
-    def register_alias(self, scope: ScopeInput, name: str, var: 'Variable') -> None:
+    def register_alias(self, scope: ScopeInput, name: str, var: "Variable") -> None:
         """Register a variable alias.
 
         The same VCD identifier may be associated with multiple reference names ("$var"
@@ -255,18 +255,18 @@ class VCDWriter:
 
         """
         if self._closed:
-            raise VCDPhaseError('Cannot register after close().')
+            raise VCDPhaseError("Cannot register after close().")
         elif not self._registering:
-            raise VCDPhaseError('Cannot register after time 0.')
+            raise VCDPhaseError("Cannot register after time 0.")
 
         scope_tuple = self._get_scope_tuple(scope)
         scope_names = self._scope_var_names.setdefault(scope_tuple, set())
         if name in scope_names:
             raise KeyError(
-                f'Duplicate var {name} in scope {self._scope_sep.join(scope_tuple)}'
+                f"Duplicate var {name} in scope {self._scope_sep.join(scope_tuple)}"
             )
 
-        var_str = f'$var {var.type} {var.size} {var.ident} {name} $end'
+        var_str = f"$var {var.type} {var.size} {var.ident} {name} $end"
         self._scope_var_strs.setdefault(scope_tuple, []).append(var_str)
         scope_names.add(name)
 
@@ -278,12 +278,12 @@ class VCDWriter:
         if not self._dumping:
             return
         self._dump_timestamp()
-        self._ofile.write('$dumpoff\n')
+        self._ofile.write("$dumpoff\n")
         for var in self._vars:
             val_str = var.dump_off()
             if val_str:
-                self._ofile.write(val_str + '\n')
-        self._ofile.write('$end\n')
+                self._ofile.write(val_str + "\n")
+        self._ofile.write("$end\n")
         self._dumping = False
 
     def dump_on(self, timestamp: TimeValue) -> None:
@@ -295,19 +295,19 @@ class VCDWriter:
             return
         self._dumping = True
         self._dump_timestamp()
-        self._dump_values('$dumpon')
+        self._dump_values("$dumpon")
 
     def _dump_values(self, keyword: str) -> None:
-        self._ofile.write(keyword + '\n')
+        self._ofile.write(keyword + "\n")
         for var in self._vars:
             val_str = var.dump(self._check_values)
             if val_str:
-                self._ofile.write(val_str + '\n')
-        self._ofile.write('$end\n')
+                self._ofile.write(val_str + "\n")
+        self._ofile.write("$end\n")
 
     def _set_timestamp(self, timestamp: TimeValue) -> None:
         if timestamp < self._timestamp:
-            raise VCDPhaseError(f'Out of order timestamp: {timestamp}')
+            raise VCDPhaseError(f"Out of order timestamp: {timestamp}")
         elif timestamp > self._timestamp:
             self._timestamp = int(timestamp)
 
@@ -316,9 +316,9 @@ class VCDWriter:
             self._last_dumped_ts is None
         ):
             self._last_dumped_ts = self._timestamp
-            self._ofile.write(f'#{self._timestamp}\n')
+            self._ofile.write(f"#{self._timestamp}\n")
 
-    def change(self, var: 'Variable', timestamp: TimeValue, value: VarValue) -> None:
+    def change(self, var: "Variable", timestamp: TimeValue, value: VarValue) -> None:
         """Change variable's value in VCD stream.
 
         This is the fundamental behavior of a :class:`VCDWriter` instance. Each time a
@@ -347,17 +347,17 @@ class VCDWriter:
 
         """
         if self._closed:
-            raise VCDPhaseError('Cannot change value after close()')
+            raise VCDPhaseError("Cannot change value after close()")
 
         # Format value early to catch any errors before writing output.
         if value != var.value or var.type == VarType.event:
             val_str = var.format_value(value, self._check_values)
         else:
-            val_str = ''
+            val_str = ""
 
         # Unroll for performance: self._set_timestamp(timestamp)
         if timestamp < self._timestamp:
-            raise VCDPhaseError(f'Out of order timestamp: {timestamp}')
+            raise VCDPhaseError(f"Out of order timestamp: {timestamp}")
         elif timestamp > self._timestamp:
             if self._registering:
                 self._finalize_registration()
@@ -371,9 +371,9 @@ class VCDWriter:
             # Unroll for performance: self._dump_timestamp()
             if self._timestamp != self._last_dumped_ts:
                 self._last_dumped_ts = self._timestamp
-                self._ofile.write(f'#{self._timestamp}\n{val_str}\n')
+                self._ofile.write(f"#{self._timestamp}\n{val_str}\n")
             else:
-                self._ofile.write(f'{val_str}\n')
+                self._ofile.write(f"{val_str}\n")
 
     def _get_scope_tuple(self, scope: ScopeInput) -> ScopeTuple:
         if isinstance(scope, str):
@@ -381,7 +381,7 @@ class VCDWriter:
         if isinstance(scope, Sequence):
             return tuple(scope)
         else:
-            raise TypeError(f'Invalid scope {scope}')
+            raise TypeError(f"Invalid scope {scope}")
 
     @classmethod
     def _check_timescale(cls, timescale: TimescaleLike) -> str:
@@ -389,15 +389,15 @@ class VCDWriter:
             return str(timescale)
         elif isinstance(timescale, (list, tuple)):
             if len(timescale) != 2:
-                raise ValueError(f'Invalid timescale {timescale}')
+                raise ValueError(f"Invalid timescale {timescale}")
             mag, unit = timescale
             return str(Timescale(TimescaleMagnitude(mag), TimescaleUnit(unit)))
         elif isinstance(timescale, str):
             return str(Timescale.from_str(timescale))
         else:
-            raise TypeError(f'Invalid timescale type {type(timescale).__name__}')
+            raise TypeError(f"Invalid timescale type {type(timescale).__name__}")
 
-    def __enter__(self) -> 'VCDWriter':
+    def __enter__(self) -> "VCDWriter":
         return self
 
     def __exit__(
@@ -436,7 +436,7 @@ class VCDWriter:
 
         """
         if self._closed:
-            raise VCDPhaseError('Cannot flush() after close()')
+            raise VCDPhaseError("Cannot flush() after close()")
         if self._registering:
             self._finalize_registration()
         if timestamp is not None:
@@ -448,14 +448,14 @@ class VCDWriter:
         for kwname, kwvalue in sorted(self._header_keywords.items()):
             if not kwvalue:
                 continue
-            lines = kwvalue.split('\n')
+            lines = kwvalue.split("\n")
             if len(lines) == 1:
-                yield f'{kwname} {lines[0]} $end'
+                yield f"{kwname} {lines[0]} $end"
             else:
                 yield kwname
                 for line in lines:
-                    yield '\t' + line
-                yield '$end'
+                    yield "\t" + line
+                yield "$end"
 
         prev_scope: ScopeTuple = ()
         for scope in sorted(self._scope_var_strs):
@@ -464,13 +464,13 @@ class VCDWriter:
             for i, (prev, this) in enumerate(zip_longest(prev_scope, scope)):
                 if prev != this:
                     for _ in prev_scope[i:]:
-                        yield '$upscope $end'
+                        yield "$upscope $end"
 
                     for j, name in enumerate(scope[i:]):
                         scope_type = self._scope_types.get(
                             scope[: i + j + 1], self._default_scope_type
                         )
-                        yield f'$scope {scope_type.value} {name} $end'
+                        yield f"$scope {scope_type.value} {name} $end"
                     break
             else:
                 assert scope != prev_scope  # pragma no cover
@@ -481,16 +481,16 @@ class VCDWriter:
             prev_scope = scope
 
         for _ in prev_scope:
-            yield '$upscope $end'
+            yield "$upscope $end"
 
-        yield '$enddefinitions $end'
+        yield "$enddefinitions $end"
 
     def _finalize_registration(self) -> None:
         assert self._registering
-        self._ofile.write('\n'.join(self._gen_header()) + '\n')
+        self._ofile.write("\n".join(self._gen_header()) + "\n")
         if self._vars:
             self._dump_timestamp()
-            self._dump_values('$dumpvars')
+            self._dump_values("$dumpvars")
         self._registering = False
 
         # This state is not needed after registration phase.
@@ -499,13 +499,13 @@ class VCDWriter:
         self._scope_var_names.clear()
 
 
-ValueType = TypeVar('ValueType')
+ValueType = TypeVar("ValueType")
 
 
 class Variable(Generic[ValueType]):
     """VCD variable details needed to call :meth:`VCDWriter.change()`."""
 
-    __slots__ = ('ident', 'type', 'size', 'value')
+    __slots__ = ("ident", "type", "size", "value")
 
     def __init__(self, ident: str, type: VarType, size: VariableSize, init: ValueType):
         #: Identifier used in VCD output stream.
@@ -547,18 +547,18 @@ class ScalarVariable(Variable[ScalarValue]):
 
         """
         if isinstance(value, str):
-            if check and (len(value) != 1 or value not in '01xzXZ'):
-                raise ValueError(f'Invalid scalar value ({value})')
+            if check and (len(value) != 1 or value not in "01xzXZ"):
+                raise ValueError(f"Invalid scalar value ({value})")
             return value + self.ident
         elif value is None:
-            return 'z' + self.ident
+            return "z" + self.ident
         elif value:
-            return '1' + self.ident
+            return "1" + self.ident
         else:
-            return '0' + self.ident
+            return "0" + self.ident
 
     def dump_off(self) -> str:
-        return 'x' + self.ident
+        return "x" + self.ident
 
 
 class EventVariable(Variable[EventValue]):
@@ -570,9 +570,9 @@ class EventVariable(Variable[EventValue]):
 
     def format_value(self, value: EventValue, check: bool = True) -> str:
         if value:
-            return '1' + self.ident
+            return "1" + self.ident
         else:
-            raise ValueError('Invalid event value')
+            raise ValueError("Invalid event value")
 
     def dump(self, check: bool = True) -> Optional[str]:
         return None
@@ -598,9 +598,9 @@ class StringVariable(Variable[StringValue]):
 
         """
         if value is None:
-            value_str = ''
+            value_str = ""
         elif check and not isinstance(value, str):
-            raise ValueError(f'Invalid string value ({value!r})')
+            raise ValueError(f"Invalid string value ({value!r})")
         else:
             value_str = value.translate(
                 {
@@ -611,7 +611,7 @@ class StringVariable(Variable[StringValue]):
                     92: "\\\\",
                 }
             )
-        return f's{value_str} {self.ident}'
+        return f"s{value_str} {self.ident}"
 
 
 class RealVariable(Variable[RealValue]):
@@ -633,9 +633,9 @@ class RealVariable(Variable[RealValue]):
 
         """
         if not check or isinstance(value, Number):
-            return f'r{value:.16g} {self.ident}'
+            return f"r{value:.16g} {self.ident}"
         else:
-            raise ValueError(f'Invalid real value ({value})')
+            raise ValueError(f"Invalid real value ({value})")
 
 
 class VectorVariable(Variable[ScalarValue]):
@@ -668,10 +668,10 @@ class VectorVariable(Variable[ScalarValue]):
 
         """
         value_str = _format_scalar_value(value, self.size, check)
-        return f'b{value_str} {self.ident}'
+        return f"b{value_str} {self.ident}"
 
     def dump_off(self) -> str:
-        return self.format_value('x', check=False)
+        return self.format_value("x", check=False)
 
 
 class CompoundVectorVariable(Variable[CompoundValue]):
@@ -696,7 +696,7 @@ class CompoundVectorVariable(Variable[CompoundValue]):
         """
         if len(value) != len(self.size):
             raise ValueError(
-                f'Compound value ({value}) must be length {len(self.size)}'
+                f"Compound value ({value}) must be length {len(self.size)}"
             )
         # The string is built-up right-to-left in order to minimize/avoid left-extension
         # in the final value string.
@@ -712,46 +712,46 @@ class CompoundVectorVariable(Variable[CompoundValue]):
                 leftc = vstr_list[0][0]
                 rightc = vstr[0]
                 if len(vstr) > 1 or (
-                    (rightc != leftc or leftc == '1')
-                    and (rightc != '0' or leftc != '1')
+                    (rightc != leftc or leftc == "1")
+                    and (rightc != "0" or leftc != "1")
                 ):
-                    extendc = '0' if leftc == '1' else leftc
+                    extendc = "0" if leftc == "1" else leftc
                     extend_size = size_sum - vstr_len
                     vstr_list.insert(0, extendc * extend_size)
                     vstr_list.insert(0, vstr)
                     vstr_len += extend_size + len(vstr)
             size_sum += size
-        value_str = ''.join(vstr_list)
-        return f'b{value_str} {self.ident}'
+        value_str = "".join(vstr_list)
+        return f"b{value_str} {self.ident}"
 
     def dump_off(self) -> str:
-        return self.format_value(tuple('x' * len(self.size)), check=False)
+        return self.format_value(tuple("x" * len(self.size)), check=False)
 
 
 def _format_scalar_value(value: ScalarValue, size: int, check: bool) -> str:
     if isinstance(value, int):
         max_val = 1 << size
         if check and (-value > (max_val >> 1) or value >= max_val):
-            raise ValueError(f'Value ({value}) not representable in {size} bits')
+            raise ValueError(f"Value ({value}) not representable in {size} bits")
         if value < 0:
             value += max_val
-        return format(value, 'b')
+        return format(value, "b")
     elif value is None:
-        return 'z'
+        return "z"
     else:
         if check and (
             not isinstance(value, str)
             or len(value) > size
-            or any(c not in '01xzXZ-' for c in value)
+            or any(c not in "01xzXZ-" for c in value)
         ):
-            raise ValueError(f'Invalid vector value ({value})')
+            raise ValueError(f"Invalid vector value ({value})")
         return value
 
 
 def _encode_identifier(v: int) -> str:
     """Encode identifer value into base-94 string."""
-    assert v > 0, 'identifier codes must be > 0'
-    encoded = ''
+    assert v > 0, "identifier codes must be > 0"
+    encoded = ""
     while v != 0:
         v -= 1
         encoded += chr((v % 94) + 33)
