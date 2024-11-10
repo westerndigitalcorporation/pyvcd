@@ -2,9 +2,9 @@
 
 .. autosummary::
 
-    ~vcd.writer.VCDPhaseError
-    ~vcd.writer.VCDWriter
-    ~vcd.reader.tokenize
+    ~writer.VCDPhaseError
+    ~writer.VCDWriter
+    ~reader.tokenize
 
 """
 
