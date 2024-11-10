@@ -53,15 +53,15 @@ def test_gtkw_dumpfile_noabspath(gtkw):
 
 
 def test_gtkw_dumpfile_mtime(gtkw):
-    with pytest.raises(Exception):  # FileNotFoundError or IOError
+    with pytest.raises((FileNotFoundError, IOError)):
         gtkw.dumpfile_mtime(dump_path="InVaLiD")
     gtkw.dumpfile_mtime(mtime=1234567890.0)
     assert gtkw.file.getvalue() == '[dumpfile_mtime] "Fri Feb 13 23:31:30 2009"\n'
 
 
 def test_gtkw_dumpfile_mtime_gmtime(gtkw):
-    with pytest.raises(Exception):  # FileNotFoundError or IOError
-        gtkw.dumpfile_mtime(dumpfile="InVaLiD")
+    with pytest.raises((FileNotFoundError, IOError)):
+        gtkw.dumpfile_mtime(dump_path="InVaLiD")
     with pytest.raises(TypeError):
         gtkw.dumpfile_mtime(mtime="right now")
     gtkw.dumpfile_mtime(mtime=time.gmtime(1234567890.0))
@@ -69,8 +69,8 @@ def test_gtkw_dumpfile_mtime_gmtime(gtkw):
 
 
 def test_gtkw_dumpfile_mtime_datetime(gtkw):
-    with pytest.raises(Exception):  # FileNotFoundError or IOError
-        gtkw.dumpfile_mtime("InVaLiD")
+    with pytest.raises((FileNotFoundError, IOError)):
+        gtkw.dumpfile_mtime(dump_path="InVaLiD")
     gtkw.dumpfile_mtime(mtime=datetime.datetime(2009, 2, 13, 23, 31, 30))
     assert gtkw.file.getvalue() == '[dumpfile_mtime] "Fri Feb 13 23:31:30 2009"\n'
 
