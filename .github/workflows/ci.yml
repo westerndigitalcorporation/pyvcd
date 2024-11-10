@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Set up Python
@@ -31,7 +31,7 @@ jobs:
 
     - name: Upload dist
       if: github.repository == 'westerndigitalcorporation/pyvcd'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pyvcd-dist
         path: "dist/*"
@@ -48,7 +48,7 @@ jobs:
 
     steps:
     - name: Retrieve package
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: pyvcd-dist
         path: "dist"
@@ -72,7 +72,7 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', 'pypy-3.7', 'pypy-3.9']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -90,7 +90,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -107,7 +107,7 @@ jobs:
     if: github.repository == 'westerndigitalcorporation/pyvcd'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
