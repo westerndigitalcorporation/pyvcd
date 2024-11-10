@@ -552,7 +552,9 @@ def _parse_token(s: _TokenizerState) -> Token:
             real = float(bytes(real_digits))
         except ValueError:
             real_str = bytes(real_digits).decode("ascii")
-            raise VCDParseError(start, f"Expected real value, got: {real_str}")
+            raise VCDParseError(
+                start, f"Expected real value, got: {real_str}"
+            ) from None
 
         s.skip_ws()
 
@@ -594,7 +596,9 @@ def _parse_token(s: _TokenizerState) -> Token:
             try:
                 scope_type = ScopeType(identifier)
             except ValueError:
-                raise VCDParseError(s.loc, f"Invalid $scope type: {identifier}")
+                raise VCDParseError(
+                    s.loc, f"Invalid $scope type: {identifier}"
+                ) from None
 
             s.skip_ws()
 
@@ -618,7 +622,7 @@ def _parse_token(s: _TokenizerState) -> Token:
                     s.loc,
                     f"Invalid $timescale magnitude: {mag_int}. "
                     f"Must be one of: {valid_magnitudes}.",
-                )
+                ) from None
 
             s.skip_ws()
             unit_str = s.take_identifier()
@@ -630,7 +634,7 @@ def _parse_token(s: _TokenizerState) -> Token:
                     s.loc,
                     f"Invalid $timescale unit: {unit_str}. "
                     f"Must be one of: {valid_units}.",
-                )
+                ) from None
 
             s.take_end()
 
@@ -651,7 +655,7 @@ def _parse_token(s: _TokenizerState) -> Token:
                 raise VCDParseError(
                     s.loc,
                     f"Invalid $var type: {type_str}. Must be one of: {valid_types}",
-                )
+                ) from None
 
             s.skip_ws()
             size = s.take_decimal()
