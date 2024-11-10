@@ -3,6 +3,7 @@
 This module provides :class:`VCDWriter` for writing VCD files.
 
 """
+
 from datetime import datetime
 from itertools import zip_longest
 from numbers import Number

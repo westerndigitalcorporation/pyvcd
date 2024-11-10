@@ -7,6 +7,7 @@
     ~vcd.reader.tokenize
 
 """
+
 from .reader import tokenize
 from .writer import VCDPhaseError, VCDWriter
 
