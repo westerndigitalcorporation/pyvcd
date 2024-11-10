@@ -1,2 +1,10 @@
+# This primarily exists for the readthedocs.io build, but may
+# also be useful for building docs in a local virtualenv:
+#
+#   python -m venv .venv
+#   source .venv/bin/activate
+#   pip install -r docs/requirements.txt
+#   make docs
+.
 setuptools_scm
 sphinx-rtd-theme
