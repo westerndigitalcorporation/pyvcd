@@ -433,26 +433,37 @@ class _TokenizerState:
 
         return identifier
 
-    def take_bit_index(self) -> Union[int, Tuple[int, int]]:
+    def take_bit_index(self) -> Tuple[int, Union[None, str, int, Tuple[int, int]]]:
         self.skip_ws()
-        index0 = self.take_decimal()
-        index1: Optional[int]
-
-        c = self.skip_ws()
-        if c == 58:  # ':'
-            self.advance()
-            self.skip_ws()
-            index1 = self.take_decimal()
+        c = self.buf[self.pos]
+        ident = None
+        if (
+            65 <= c <= 90  # 'A' <= c <= 'Z'
+            or 97 <= c <= 122  # 'a' - 'z'
+            or c == 95  # '_'
+        ):
+            ident = self.take_identifier()
         else:
-            index1 = None
+            index0 = self.take_decimal()
+            index1: Optional[int]
+
+            c = self.skip_ws()
+            if c == 58:  # ':'
+                self.advance()
+                self.skip_ws()
+                index1 = self.take_decimal()
+            else:
+                index1 = None
 
         c = self.skip_ws()
         if c == 93:  # ']'
-            self.advance(raise_on_eof=False)
-            if index1 is None:
-                return index0
+            c = self.advance(raise_on_eof=False)
+            if ident:
+                return [c, ident]
+            elif index1 is None:
+                return [c, index0]
             else:
-                return (index0, index1)
+                return [c, (index0, index1)]
         else:
             raise VCDParseError(self.loc, 'Expected bit index to terminate with "]"')
 
@@ -603,6 +614,12 @@ def _parse_token(s: _TokenizerState) -> Token:
             s.skip_ws()
 
             scope_ident = s.take_identifier()
+            if s.buf[s.pos] in [40, 91]: # ( [
+                # get scope like this $scope begin scope_name(432) or scope_name[432] $end which is out of spec but seen in vcd dump
+                s.advance()
+                dec = s.take_decimal()
+                s.advance() #skip )
+                scope_ident += str(dec)
 
             s.take_end()
 
@@ -665,13 +682,23 @@ def _parse_token(s: _TokenizerState) -> Token:
             ident = s.take_identifier()
 
             bit_index: Union[None, int, Tuple[int, int]]
+            bit_index_and_char: Tuple[int, Union[None, str, int, Tuple[int, int]]]
             c = s.skip_ws()
             if c == 91:  # '['
                 s.advance()
-                bit_index = s.take_bit_index()
+                bit_index_and_char = s.take_bit_index()
+                bit_index = bit_index_and_char[1]
+                c = bit_index_and_char[0]
             else:
                 bit_index = None
-
+            
+            while c == 91:
+                #format is like $var integer  32 p&!  varname [1423][2] $end
+                ident += f'[{bit_index}]'
+                s.advance()
+                bit_index_and_char = s.take_bit_index()
+                bit_index = bit_index_and_char[1]
+                c = bit_index_and_char[0]
             s.take_end()
             var_decl = VarDecl(type_, size, id_code, ident, bit_index)
             return Token(TokenKind.VAR, s.span(start), var_decl)
